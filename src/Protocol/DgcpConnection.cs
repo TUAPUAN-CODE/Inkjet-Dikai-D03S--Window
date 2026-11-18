@@ -68,9 +68,28 @@ namespace Dikai.Dgcp
             {
                 throw new DgcpException("เชื่อมต่อ " + host + ":" + port + " ไม่ได้", ex);
             }
+            EnableKeepAlive(client.Client);
             var conn = new DgcpConnection(client.GetStream(), DgcpLimits.TcpMaxRequestFrame, client);
             conn.Start();
             return conn;
+        }
+
+        /// <summary>ตรวจสายหลุดทุก ~15 วินาทีขณะไม่ได้ส่งอะไร (ค่าเริ่มต้นของ Windows คือ 2 ชั่วโมง)</summary>
+        private static void EnableKeepAlive(Socket s)
+        {
+            try
+            {
+                s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+                var v = new byte[12];
+                BitConverter.GetBytes(1u).CopyTo(v, 0);      // on
+                BitConverter.GetBytes(15000u).CopyTo(v, 4);  // เริ่มตรวจหลังว่าง 15 วินาที
+                BitConverter.GetBytes(3000u).CopyTo(v, 8);   // ถามซ้ำทุก 3 วินาที
+                s.IOControl(IOControlCode.KeepAliveValues, v, null);
+            }
+            catch (Exception)
+            {
+                // บางระบบไม่รองรับ — ไม่จำเป็นต่อการทำงาน
+            }
         }
 
         private static void ObserveFault(Task t)

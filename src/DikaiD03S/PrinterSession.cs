@@ -47,6 +47,9 @@ namespace Dikai.App
         public DeviceStatus LastStatus { get; set; }
         public int TimeoutMs { get; set; } = 3000;
 
+        /// <summary>&gt; 0 ระหว่างอ่านสถานะอัตโนมัติ — แพ็กเก็ต 3Ah ช่วงนั้นถูกซ่อนจาก log (ที่ผู้ใช้กดเองยังแสดง)</summary>
+        public int QuietStatusDepth;
+
         public event Action<PrinterSession> StateChanged;
         public event Action<LogEntry> Log;
         public event Action<PrinterSession, DgcpFrame> Unsolicited;
@@ -183,7 +186,7 @@ namespace Dikai.App
                 Kind = outgoing ? LogKind.Tx : LogKind.Rx,
                 Text = DgcpDescriber.Describe(f, outgoing),
                 HexText = Hex.Format(f.Raw),
-                IsStatusFrame = f.Command == Cmd.GetStatus || f.Command == Cmd.StatusReport,
+                IsStatusFrame = f.Command == Cmd.StatusReport || (f.Command == Cmd.GetStatus && Volatile.Read(ref QuietStatusDepth) > 0),
             });
         }
 

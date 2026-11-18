@@ -31,6 +31,8 @@ namespace Dikai.Simulator
             public int FileListPageSize = 100;
             public int ReportIntervalSec;
             public int MaxClients = 3;
+            /// <summary>ตอบ 41h โดยชื่อไฟล์เป็น 00 ทั้งหมด (พบในเครื่องจริงบางรุ่น)</summary>
+            public bool BlankFileNames;
             public Action<string> Log = s => { };
         }
 
@@ -523,7 +525,7 @@ namespace Dikai.Simulator
         private IEnumerable<byte[]> FileListFrames()
         {
             int total = _fileOrder.Count;
-            int width = Math.Max(8, _fileOrder.Max(n => Encoding.UTF8.GetByteCount(n)));
+            int width = _o.BlankFileNames ? 12 : Math.Max(8, _fileOrder.Max(n => Encoding.UTF8.GetByteCount(n)));
             int page = Math.Max(1, _o.FileListPageSize);
             for (int start = 0; start < total; start += page)
             {
@@ -537,7 +539,7 @@ namespace Dikai.Simulator
                 {
                     var b = new byte[width];
                     var nb = Encoding.UTF8.GetBytes(_fileOrder[start + i]);
-                    Buffer.BlockCopy(nb, 0, b, 0, nb.Length);
+                    if (!_o.BlankFileNames) Buffer.BlockCopy(nb, 0, b, 0, nb.Length);
                     d.AddRange(b);
                 }
                 yield return DgcpFrame.Build(_o.Station, Cmd.GetFileList, d.ToArray());

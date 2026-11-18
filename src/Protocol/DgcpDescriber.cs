@@ -74,7 +74,9 @@ namespace Dikai.Dgcp
                 case Cmd.GetUsbFileList:
                 {
                     var p = DgcpResponses.ParseFileList(f.Data);
-                    return Cmd.Name(f.Command) + " " + (p.Start + 1) + "-" + (p.Start + p.Count) + " จาก " + p.Total + ": " + string.Join(", ", p.Names);
+                    var head = Cmd.Name(f.Command) + " " + (p.Start + 1) + "-" + (p.Start + p.Count) + " จาก " + p.Total;
+                    if (p.Names.Count > 0 && p.Names.All(n => n.Length == 0)) return head + " (เครื่องไม่ได้ส่งชื่อมา — ชื่อเป็นค่าว่างทั้งหมด)";
+                    return head + ": " + string.Join(", ", p.Names);
                 }
                 case Cmd.GetTime:
                 {

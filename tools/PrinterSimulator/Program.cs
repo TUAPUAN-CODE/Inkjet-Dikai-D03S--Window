@@ -28,6 +28,7 @@ namespace Dikai.Simulator
                         case "--files": o.ExtraFiles = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                         case "--page": o.FileListPageSize = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                         case "--report": o.ReportIntervalSec = int.Parse(Next(), CultureInfo.InvariantCulture); break;
+                        case "--blank-names": o.BlankFileNames = true; break;
                         case "-h":
                         case "--help":
                         case "/?":
@@ -83,6 +84,7 @@ namespace Dikai.Simulator
             Console.WriteLine("  --files 0         extra dummy templates FILE001..");
             Console.WriteLine("  --page 100        file names per 41h packet");
             Console.WriteLine("  --report 0        push 3Fh status every N seconds (0 = off)");
+            Console.WriteLine("  --blank-names     answer 41h with empty (00) file names, like some real units");
         }
     }
 }

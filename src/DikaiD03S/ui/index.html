@@ -1244,9 +1244,14 @@ $("#btnLoadFiles").onclick = e => busy(e.currentTarget, async () => {
   try {
     const files = await api("files", { id: p.id, usb: false });
     const d = draft();
-    d.knownTemplates = files.filter(Boolean);
+    const named = files.filter(f => (f || "").trim());
+    if (files.length > 0 && named.length === 0) {
+      toast("warn", `เครื่องตอบว่ามี ${files.length} แม่แบบ แต่ไม่ได้ส่งชื่อมา`, "พิมพ์ชื่อแม่แบบเองตามรายการไฟล์บนหน้าจอเครื่อง หรือกด ดึงจากเครื่อง", 9000);
+      return;
+    }
+    d.knownTemplates = named;
     renderTemplateChips();
-    toast("good", `พบ ${files.length} แม่แบบ`, "แตะชื่อแม่แบบเพื่อเลือก");
+    toast("good", `พบ ${named.length} แม่แบบ`, "แตะชื่อแม่แบบเพื่อเลือก");
   } catch (err) { toast("bad", "อ่านรายชื่อแม่แบบไม่สำเร็จ", err.message, 6000); }
 });
 
@@ -1264,6 +1269,8 @@ $("#btnFromDevice").onclick = e => busy(e.currentTarget, async () => {
     if (d.template && !(d.knownTemplates || []).some(t => t.toLowerCase() === d.template.toLowerCase())) d.knownTemplates = [...(d.knownTemplates || []), d.template];
     loadDraftToForm();
     onDraftChanged();
+    delete S.results[p.id];
+    setResult($("#sendResult")); // ล้างผลส่งเก่า (เช่น error ชื่อแม่แบบ) ที่ไม่เกี่ยวแล้ว
     toast("good", `แม่แบบ "${st.fileName}"`, `มี ${st.variables.length} ตัวแปร — แก้ค่าแล้วกดส่ง`);
     $("#vars .value")?.focus();
   } catch (err) { toast("bad", "อ่านจากเครื่องไม่สำเร็จ", err.message, 6000); }
@@ -1328,7 +1335,7 @@ async function readStatus(btn, quiet = false) {
   const id = p.id;
   const run = async () => {
     try {
-      const st = await api("status", { id });
+      const st = await api("status", { id, quiet });
       S.status[id] = st;
       if (S.selId === id) renderStatus(st);
       renderRail();

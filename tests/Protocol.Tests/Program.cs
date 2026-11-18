@@ -21,6 +21,8 @@ internal static class Program
         Run("33h ทั้งแบบมี/ไม่มีไบต์ความยาว", CurrentFileName);
         Run("41h แพ็กเก็ตแรกในเอกสาร", FileListExample);
         Run("ตัวแยกแพ็กเก็ต: ข้ามขยะ / หัวปลอม / 5A ค้างท้าย", ParserResync);
+        Run("41h จากเครื่องจริง: ชื่อไฟล์เป็น 00 ทั้งหมด", BlankFileNames);
+        Run("40h จากเครื่องจริง (Sachet-16)", RealParameters);
         Run("Hex.Parse หลายรูปแบบ", HexParse);
         Run("ตรวจความยาวข้อความ (255 ไบต์, ภาษาไทย)", LengthChecks);
         await RunAsync("เชื่อมต่อโปรแกรมจำลอง: อ่านสถานะ / รายชื่อ / เลือกแม่แบบ / error", SimulatorBasics);
@@ -107,6 +109,29 @@ internal static class Program
         Equal(0, p.Start, "เริ่ม");
         Equal(5, p.Count, "จำนวน");
         Equal(5, p.Names.Count, "ชื่อ");
+    }
+
+    private static void BlankFileNames()
+    {
+        // ข้อมูลจริงจาก log: 35 ไฟล์, ชื่อยาว 12 ไบต์, เป็น 00 ทั้งหมด
+        var raw = Hex.Parse("5A A5 01 AD 01 41 00 23 00 00 00 23 0C").Concat(new byte[35 * 12]).ToArray();
+        var f = DgcpFrame.FromRaw(raw);
+        var p = DgcpResponses.ParseFileList(f.Data);
+        Equal(35, p.Total, "ทั้งหมด");
+        Equal(35, p.Names.Count, "จำนวนชื่อ");
+        Equal(true, p.Names.All(n => n.Length == 0), "ชื่อว่าง");
+        Equal(true, DgcpDescriber.Describe(f, false).Contains("ไม่ได้ส่งชื่อมา"), "ข้อความ log");
+    }
+
+    private static void RealParameters()
+    {
+        var raw = Hex.Parse("5A A5 00 9A 01 40 00 00 00 05 00 03 00 8C 00 02 00 00 00 00 00 00 00 00 05 78 00 D2 00 37 00 23 00 05 00 00 00 0D 00 32 00 01 00 0A 00 04 00 00 00 00 00 00 00 02 00 00 30 00 00 00 30 00 00 00 00 00 00 00 00 64 00 02 00 0A 00 64 00 00 00 00 00 00 30 30 30 30 00 01 00 00 00 00 00 00 00 00 00 00 00 D2 00 00 00 00 00 00 02 40 02 59 00 00 00 00 00 00 00 00 00 01 00 01 C0 A8 01 02 FF FF FF 00 C0 A8 01 01 00 00 00 00 00 00 00 00 00 00 00 FF 00 FF 00 FF 03 E8 00 00 00 00 00 00");
+        var ps = DgcpResponses.ParseParameters(DgcpFrame.FromRaw(raw).Data);
+        Equal("1", ps.Single(x => x.Name.StartsWith("เลขเครื่อง")).Value, "ST");
+        Equal("192.168.1.2", ps.Single(x => x.Name == "IP address").Value, "IP");
+        Equal("255.255.255.0", ps.Single(x => x.Name == "Subnet mask").Value, "mask");
+        Equal("1 = 53mm", ps.Single(x => x.Name == "ชนิดหัวพิมพ์").Value, "หัวพิมพ์");
+        Equal("0 = Intermittent", ps.Single(x => x.Name == "โหมดเครื่อง").Value, "โหมด");
     }
 
     private static void ParserResync()

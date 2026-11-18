@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Dikai.Dgcp;
 
@@ -87,9 +88,18 @@ namespace Dikai.App
                 case "status":
                 {
                     var s = Find(b);
-                    var st = await (await Client(s)).GetStatusAsync().ConfigureAwait(false);
-                    s.LastStatus = st;
-                    return StatusDto(st);
+                    bool quiet = b.Bool("quiet");
+                    if (quiet) Interlocked.Increment(ref s.QuietStatusDepth);
+                    try
+                    {
+                        var st = await (await Client(s)).GetStatusAsync().ConfigureAwait(false);
+                        s.LastStatus = st;
+                        return StatusDto(st);
+                    }
+                    finally
+                    {
+                        if (quiet) Interlocked.Decrement(ref s.QuietStatusDepth);
+                    }
                 }
                 case "files":
                 {
@@ -407,6 +417,11 @@ namespace Dikai.App
                         break;
                 }
             }
+            catch (DgcpDeviceException ex)
+            {
+                lock (_awaitingPrintDone) _awaitingPrintDone.Remove(s);
+                throw new DgcpException(Explain(ex, mode, template), ex);
+            }
             catch (Exception)
             {
                 lock (_awaitingPrintDone) _awaitingPrintDone.Remove(s);
@@ -429,6 +444,30 @@ namespace Dikai.App
                 { "waitingPrintDone", mode == SendMode.UpdateWithFeedback && waiting },
                 { "printer", PrinterDto(s) },
             };
+        }
+
+        /// <summary>แปลง error จากเครื่องเป็นข้อความที่บอกว่าต้องแก้อะไร</summary>
+        private static string Explain(DgcpDeviceException ex, SendMode mode, string template)
+        {
+            switch (ex.Code)
+            {
+                case 6:
+                case 11:
+                case 12:
+                    return mode == SendMode.SelectFile
+                        ? "ไม่พบแม่แบบชื่อ \"" + template + "\" ในเครื่อง (error " + ex.Code + ") — ใช้ชื่อตามที่เห็นในรายการไฟล์บนหน้าจอเครื่อง หรือกด \"ดึงจากเครื่อง\" เพื่ออ่านชื่อแม่แบบที่ใช้อยู่"
+                        : ex.Message;
+                case 2:
+                    return "เครื่องไม่รับข้อมูล (error 2) — ส่วนใหญ่เกิดจากชื่อตัวแปรไม่ตรงกับในแม่แบบ (ตัวพิมพ์เล็ก-ใหญ่ต้องตรง) หรือแม่แบบไม่มีช่องที่เป็นตัวแปร กด \"ดึงจากเครื่อง\" เพื่อดูชื่อที่ถูกต้อง";
+                case 5:
+                    return "เครื่องยังไม่มีแม่แบบที่ใช้งานอยู่ (error 5) — ส่งแบบ \"เลือกแม่แบบ + ใส่ค่า (34h)\" ก่อน";
+                case 8:
+                    return "คิวของเครื่องเต็ม (error 8) — ข้อมูลชุดก่อนยังไม่ถูกพิมพ์ (ไลน์ยังไม่เดิน/ไม่มีสัญญาณพิมพ์) ลองเปิด \"ล้างคิวก่อนส่ง\" หรือใช้โหมด 49h";
+                case 10:
+                    return "เลขเครื่อง (ST) ไม่ตรงกับเครื่อง (error 10) — ดูเลขจริงในหน้า ข้อมูลเครื่อง → เลขเครื่อง (Local ID / ST) แล้วแก้ที่ปุ่มแก้ไขเครื่อง";
+                default:
+                    return ex.Message;
+            }
         }
 
         private void OnUnsolicited(PrinterSession s, DgcpFrame f)
