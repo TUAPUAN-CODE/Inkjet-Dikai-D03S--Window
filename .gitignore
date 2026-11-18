@@ -6,3 +6,4 @@ obj/
 # ไฟล์ที่โปรแกรมสร้างตอนรัน
 DikaiD03S.settings.json*
 logs/
+DikaiD03S.instance

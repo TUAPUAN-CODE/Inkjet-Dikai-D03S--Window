@@ -1,0 +1,1750 @@
+<!doctype html>
+<html lang="th" translate="no" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google" content="notranslate">
+<meta name="color-scheme" content="dark light">
+<title>Dikai D03S</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='.5' stop-color='%235b8cff'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='2' y='2' width='60' height='60' rx='16' fill='url(%23g)'/%3E%3Crect x='20' y='13' width='24' height='12' rx='2' fill='white'/%3E%3Crect x='12' y='23' width='40' height='20' rx='5' fill='white'/%3E%3Crect x='20' y='36' width='24' height='15' rx='2' fill='white'/%3E%3C/svg%3E">
+<style>
+/* =====================================================================
+   Design tokens — dark (ค่าเริ่มต้น) / light
+   ===================================================================== */
+:root {
+  --font: "Segoe UI Variable Text", "Segoe UI", "Leelawadee UI", "Noto Sans Thai", "Noto Sans Thai UI", Tahoma, system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", "Leelawadee UI", "Noto Sans Thai", Tahoma, system-ui, sans-serif;
+  --mono: "Cascadia Code", "Cascadia Mono", Consolas, "JetBrains Mono", ui-monospace, monospace;
+  --r-xl: 26px; --r-lg: 20px; --r-md: 14px; --r-sm: 10px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --grad: linear-gradient(120deg, #22d3ee 0%, #5b8cff 48%, #a78bfa 100%);
+  --good: #34d399; --warn: #fbbf24; --bad: #fb7185; --info: #60a5fa;
+}
+:root[data-theme="dark"] {
+  --bg: #070b14;
+  --surface: rgba(22, 30, 48, .62);
+  --surface-2: rgba(34, 44, 68, .55);
+  --surface-3: rgba(255, 255, 255, .06);
+  --stroke: rgba(255, 255, 255, .08);
+  --stroke-2: rgba(255, 255, 255, .14);
+  --text: #eaf0fb; --muted: #95a3bd; --faint: #66738d;
+  --field: rgba(255, 255, 255, .045);
+  --shadow: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 20px 40px -24px rgba(0, 0, 0, .9);
+  --glow: 0 10px 30px -10px rgba(91, 140, 255, .65);
+  --on-grad: #06101f;
+  --blob-a: rgba(34, 211, 238, .16); --blob-b: rgba(167, 139, 250, .18); --blob-c: rgba(91, 140, 255, .14);
+}
+:root[data-theme="light"] {
+  --bg: #eef2f9;
+  --surface: rgba(255, 255, 255, .72);
+  --surface-2: rgba(255, 255, 255, .9);
+  --surface-3: rgba(15, 23, 42, .045);
+  --stroke: rgba(15, 23, 42, .08);
+  --stroke-2: rgba(15, 23, 42, .14);
+  --text: #0f172a; --muted: #55627a; --faint: #8b97ad;
+  --field: rgba(255, 255, 255, .85);
+  --shadow: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 18px 40px -26px rgba(30, 41, 80, .35);
+  --glow: 0 10px 30px -12px rgba(91, 140, 255, .55);
+  --on-grad: #ffffff;
+  --blob-a: rgba(34, 211, 238, .22); --blob-b: rgba(167, 139, 250, .22); --blob-c: rgba(91, 140, 255, .18);
+  --good: #059669; --warn: #d97706; --bad: #e11d48; --info: #2563eb;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.5 var(--font); letter-spacing: .1px;
+  -webkit-font-smoothing: antialiased; overflow: hidden;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+::selection { background: rgba(91, 140, 255, .35); }
+:focus-visible { outline: 2px solid #5b8cff; outline-offset: 2px; }
+.hidden { display: none !important; }
+i[data-icon], i.ico { display: contents; }
+kbd {
+  font: 600 11px/1 var(--font); padding: 4px 6px; border-radius: 6px;
+  border: 1px solid var(--stroke-2); background: var(--surface-3); color: var(--muted);
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--stroke-2); border-radius: 10px; border: 3px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------------------------------------------------------------- aurora */
+.aurora { position: fixed; inset: -20%; z-index: 0; pointer-events: none; filter: blur(70px); }
+.aurora i { position: absolute; border-radius: 50%; animation: float 26s var(--ease) infinite alternate; }
+.aurora i:nth-child(1) { width: 46vw; height: 46vw; left: 4%; top: 2%; background: var(--blob-a); }
+.aurora i:nth-child(2) { width: 40vw; height: 40vw; right: 2%; top: 6%; background: var(--blob-b); animation-delay: -8s; }
+.aurora i:nth-child(3) { width: 50vw; height: 40vw; left: 30%; bottom: -6%; background: var(--blob-c); animation-delay: -16s; }
+@keyframes float { to { transform: translate3d(4vw, 3vh, 0) scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { *, .aurora i { animation: none !important; transition: none !important; } }
+
+/* ---------------------------------------------------------------- layout */
+.app {
+  position: relative; z-index: 1; height: 100vh;
+  display: grid; gap: 14px; padding: 14px;
+  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-rows: 60px minmax(0, 1fr) var(--act-h, 240px);
+  transition: grid-template-rows .35s var(--ease);
+}
+.app.act-collapsed { --act-h: 56px; }
+.glass {
+  background: var(--surface); border: 1px solid var(--stroke);
+  backdrop-filter: blur(22px) saturate(150%); -webkit-backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: var(--shadow);
+}
+
+/* ---------------------------------------------------------------- top bar */
+.topbar {
+  grid-column: 1 / -1; border-radius: var(--r-lg);
+  display: flex; align-items: center; gap: 16px; padding: 0 12px 0 14px;
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 272px; }
+.logo {
+  width: 36px; height: 36px; border-radius: 11px; background: var(--grad);
+  display: grid; place-items: center; color: #fff; box-shadow: var(--glow);
+}
+.logo svg { width: 20px; height: 20px; }
+.brand-title { font: 700 16px/1.1 var(--font-display); letter-spacing: .2px; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+.cmdk {
+  flex: 1; max-width: 520px; height: 38px; margin: 0 auto;
+  display: flex; align-items: center; gap: 10px; padding: 0 12px;
+  border-radius: 12px; border: 1px solid var(--stroke); background: var(--field);
+  color: var(--muted); cursor: pointer; transition: border-color .2s, background .2s;
+}
+.cmdk:hover { border-color: var(--stroke-2); background: var(--surface-3); }
+.cmdk svg { width: 16px; height: 16px; }
+.cmdk span { flex: 1; text-align: left; }
+.top-actions { display: flex; align-items: center; gap: 10px; }
+.link-state { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); padding: 0 6px; }
+.ver { font-size: 12px; color: var(--faint); }
+
+/* ---------------------------------------------------------------- buttons */
+.btn {
+  --h: 40px; height: var(--h); padding: 0 16px; border-radius: 12px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid var(--stroke); background: var(--surface-3); color: var(--text);
+  font-weight: 600; cursor: pointer; white-space: nowrap; position: relative;
+  transition: transform .15s var(--ease), background .2s, border-color .2s, box-shadow .2s, opacity .2s;
+}
+.btn svg { width: 17px; height: 17px; flex: none; }
+.btn:hover { border-color: var(--stroke-2); background: color-mix(in srgb, var(--surface-3) 60%, var(--stroke-2)); }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .55; cursor: default; transform: none; }
+.btn.sm { --h: 34px; padding: 0 12px; font-size: 13.5px; border-radius: 10px; }
+.btn.ghost { background: transparent; }
+.btn.primary { background: var(--grad); color: var(--on-grad); border: 0; box-shadow: var(--glow); }
+.btn.primary:hover { filter: brightness(1.06) saturate(1.1); }
+.btn.danger { color: var(--bad); }
+.btn.danger.solid { background: var(--bad); color: #fff; border: 0; }
+.btn.xl { --h: 56px; padding: 0 26px; font-size: 17px; border-radius: 16px; }
+.btn.xl kbd { background: rgba(255, 255, 255, .25); color: inherit; border-color: transparent; }
+.btn.dashed { border-style: dashed; background: transparent; color: var(--muted); width: 100%; }
+.btn.dashed:hover { color: var(--text); }
+.spin { display: inline-block; }
+.btn .spin { display: none; }
+.btn.is-busy .spin { display: inline-block; }
+.btn.is-busy .ico { display: none; }
+.btn.is-busy .ico svg { display: none; }
+.btn.is-ok { background: linear-gradient(120deg, #10b981, #34d399); color: #04160f; }
+.btn.shake { animation: shake .4s; }
+@keyframes shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+.spin { width: 17px; height: 17px; border-radius: 50%; border: 2.5px solid currentColor; border-right-color: transparent; animation: rot .7s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+.icon-btn {
+  width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+  border: 1px solid var(--stroke); background: var(--surface-3); color: var(--muted); cursor: pointer;
+  transition: color .2s, border-color .2s, transform .15s;
+}
+.icon-btn:hover { color: var(--text); border-color: var(--stroke-2); }
+.icon-btn:active { transform: scale(.94); }
+.icon-btn svg { width: 18px; height: 18px; }
+.icon-btn.sm { width: 32px; height: 32px; border-radius: 10px; }
+.icon-btn.sm svg { width: 16px; height: 16px; }
+.icon-btn.danger:hover { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 50%, transparent); }
+.link { background: none; border: 0; padding: 0; color: #7aa2ff; cursor: pointer; font-weight: 600; font-size: 13px; }
+:root[data-theme="light"] .link { color: #3b6cf0; }
+
+/* ---------------------------------------------------------------- status dot */
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; position: relative; }
+.dot.good { background: var(--good); box-shadow: 0 0 10px var(--good); }
+.dot.warn { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+.dot.bad { background: var(--bad); box-shadow: 0 0 10px var(--bad); }
+.dot.info { background: var(--info); box-shadow: 0 0 10px var(--info); }
+.dot.pulse::after {
+  content: ""; position: absolute; inset: -4px; border-radius: 50%;
+  border: 2px solid currentColor; color: inherit; opacity: 0; animation: ping 1.8s var(--ease) infinite;
+}
+.dot.good.pulse::after { border-color: var(--good); }
+.dot.warn.pulse::after { border-color: var(--warn); }
+@keyframes ping { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(2.2); opacity: 0; } }
+
+/* ---------------------------------------------------------------- rail */
+.rail { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.rail-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 0; }
+.rail-head h2 { margin: 0; font: 700 13px/1 var(--font); text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
+.count { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 99px; background: var(--surface-3); color: var(--muted); border: 1px solid var(--stroke); }
+.printer-list { display: flex; flex-direction: column; gap: 10px; overflow: auto; padding: 2px; min-height: 0; }
+.pcard {
+  width: 100%; text-align: left; cursor: pointer; border-radius: var(--r-lg); padding: 14px 14px 13px;
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
+  transition: transform .2s var(--ease), border-color .2s, background .2s;
+}
+.pcard:hover { transform: translateY(-1px); border-color: var(--stroke-2); }
+.pcard.active { border-color: transparent; background: linear-gradient(var(--surface-2), var(--surface-2)) padding-box, var(--grad) border-box; border: 1px solid transparent; }
+.pcard .picon { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; background: var(--surface-3); color: var(--muted); }
+.pcard.active .picon { background: var(--grad); color: #fff; box-shadow: var(--glow); }
+.pcard .picon svg { width: 20px; height: 20px; }
+.pname { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.paddr { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.pstate { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
+.add-printer {
+  border-radius: var(--r-lg); border: 1.5px dashed var(--stroke-2); background: transparent; color: var(--muted);
+  padding: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.add-printer:hover { color: var(--text); border-color: #5b8cff; background: rgba(91, 140, 255, .06); }
+.add-printer svg { width: 18px; height: 18px; }
+.rail-foot { margin-top: auto; font-size: 12px; color: var(--faint); padding: 0 6px 2px; line-height: 1.55; }
+
+/* ---------------------------------------------------------------- main */
+.main { display: flex; flex-direction: column; gap: 14px; min-height: 0; min-width: 0; }
+.hero {
+  border-radius: var(--r-xl); padding: 14px 18px 14px 20px; display: flex; align-items: center; gap: 18px;
+}
+.hero-title { font: 700 24px/1.15 var(--font-display); margin: 0 0 8px; letter-spacing: .2px; }
+.hero-main { flex: 1; min-width: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 11px; border-radius: 99px;
+  background: var(--surface-3); border: 1px solid var(--stroke); font-size: 12.5px; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.chip svg { width: 14px; height: 14px; }
+.chip.tone-good { color: var(--good); border-color: color-mix(in srgb, var(--good) 35%, transparent); background: color-mix(in srgb, var(--good) 10%, transparent); }
+.chip.tone-bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 35%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
+.chip.tone-warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, transparent); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+.hero-actions { display: flex; align-items: center; gap: 8px; }
+.hero-error { margin-top: 8px; color: var(--bad); font-size: 13px; }
+
+/* segmented nav */
+.seg {
+  position: relative; display: inline-flex; gap: 4px; padding: 5px; border-radius: 16px; align-self: flex-start;
+}
+.seg button {
+  position: relative; z-index: 1; height: 38px; padding: 0 16px; border: 0; background: transparent; border-radius: 12px;
+  color: var(--muted); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: color .2s;
+}
+.seg button svg { width: 17px; height: 17px; }
+.seg button:hover { color: var(--text); }
+.seg button.active { color: var(--text); }
+.seg .seg-pill {
+  position: absolute; z-index: 0; top: 5px; height: 38px; border-radius: 12px;
+  background: var(--surface-2); border: 1px solid var(--stroke-2); box-shadow: 0 6px 16px -10px rgba(0, 0, 0, .6);
+  transition: left .35s var(--ease), width .35s var(--ease);
+}
+.seg.small button { height: 30px; padding: 0 12px; font-size: 13px; border-radius: 9px; }
+.seg.small { padding: 4px; border-radius: 12px; }
+.seg.small .seg-pill { top: 4px; height: 30px; border-radius: 9px; }
+
+.views { flex: 1; min-height: 0; overflow: auto; padding: 2px 4px 4px 2px; margin: -2px -4px -4px -2px; }
+.view { display: none; animation: enter .45s var(--ease); }
+.view.active { display: block; }
+@keyframes enter { from { opacity: 0; transform: translateY(8px) scale(.995); } to { opacity: 1; transform: none; } }
+
+/* ---------------------------------------------------------------- cards */
+.card { border-radius: var(--r-xl); padding: 20px; }
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.card h3 { margin: 0; font: 700 16px/1.3 var(--font-display); }
+.sub { font-size: 13px; color: var(--muted); margin: 2px 0 0; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+.head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.label { font-size: 13px; font-weight: 600; color: var(--muted); display: block; margin: 0 0 8px; }
+.label-row { display: flex; justify-content: space-between; align-items: baseline; margin: 22px 0 10px; }
+.label-row .label { margin: 0; }
+.field {
+  width: 100%; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--stroke);
+  background: var(--field); outline: none; transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.field:hover { border-color: var(--stroke-2); }
+.field:focus { border-color: #5b8cff; box-shadow: 0 0 0 4px rgba(91, 140, 255, .18); }
+.field:disabled { opacity: .5; }
+.field.big { height: 52px; font-size: 18px; font-weight: 600; }
+.field.mono, textarea.field { font-family: var(--mono); font-size: 14px; }
+textarea.field { height: auto; min-height: 120px; padding: 12px 14px; resize: vertical; line-height: 1.6; }
+select.field { appearance: none; padding-right: 34px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 18px) 19px, calc(100% - 13px) 19px; background-size: 5px 5px; background-repeat: no-repeat; }
+select.field option { background: #111827; color: #eaf0fb; }
+:root[data-theme="light"] select.field option { background: #fff; color: #0f172a; }
+
+.tchips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tchip {
+  height: 30px; padding: 0 12px; border-radius: 99px; border: 1px solid var(--stroke); background: var(--surface-3);
+  color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s var(--ease);
+}
+.tchip:hover { color: var(--text); border-color: var(--stroke-2); transform: translateY(-1px); }
+.tchip.on { color: var(--on-grad); background: var(--grad); border-color: transparent; }
+
+/* variables */
+.vars { display: flex; flex-direction: column; gap: 10px; }
+.var {
+  display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) auto auto; gap: 10px; align-items: center;
+  animation: enter .3s var(--ease);
+}
+.var .name { font-family: var(--mono); font-size: 14px; color: var(--muted); }
+.var .value { height: 52px; font-size: 18px; font-weight: 600; }
+.bytes {
+  min-width: 74px; text-align: center; font-size: 12px; font-weight: 700; padding: 6px 8px; border-radius: 10px;
+  background: var(--surface-3); color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.bytes.over { color: #fff; background: var(--bad); }
+.empty {
+  border: 1.5px dashed var(--stroke-2); border-radius: var(--r-lg); padding: 22px; text-align: center; color: var(--muted);
+}
+.empty b { color: var(--text); }
+
+.send-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); gap: 14px; align-items: start; }
+.side-col { display: flex; flex-direction: column; gap: 14px; }
+.modes { display: flex; flex-direction: column; gap: 10px; }
+.mode {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; text-align: left; cursor: pointer;
+  padding: 13px 14px; border-radius: 16px; border: 1px solid var(--stroke); background: var(--surface-3);
+  transition: border-color .2s, background .2s, transform .15s var(--ease);
+}
+.mode:hover { border-color: var(--stroke-2); }
+.mode:active { transform: scale(.99); }
+.mode .mi { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-3); color: var(--muted); }
+.mode .mi svg { width: 19px; height: 19px; }
+.mode .mt { font-weight: 700; }
+.mode .ms { font-size: 12.5px; color: var(--muted); }
+.mode .code { font: 700 11px/1 var(--mono); padding: 5px 7px; border-radius: 7px; background: var(--surface-3); color: var(--muted); }
+.mode.on { border-color: transparent; background: linear-gradient(var(--surface-2), var(--surface-2)) padding-box, var(--grad) border-box; border: 1px solid transparent; }
+.mode.on .mi { background: var(--grad); color: #fff; box-shadow: var(--glow); }
+
+.opt-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.opt-title { font-weight: 700; }
+.divider { height: 1px; background: var(--stroke); margin: 16px 0; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--stroke); border-radius: 12px; overflow: hidden; background: var(--field); }
+.stepper button { width: 38px; height: 40px; border: 0; background: transparent; cursor: pointer; font-size: 18px; color: var(--muted); }
+.stepper button:hover { color: var(--text); background: var(--surface-3); }
+.stepper input { width: 72px; height: 40px; border: 0; background: transparent; text-align: center; font-weight: 700; font-size: 16px; outline: none; font-variant-numeric: tabular-nums; }
+
+/* switch */
+.switch { appearance: none; width: 46px; height: 26px; border-radius: 99px; background: var(--stroke-2); position: relative; cursor: pointer; transition: background .25s; flex: none; margin: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .35); transition: transform .25s var(--ease); }
+.switch:checked { background: #5b8cff; }
+.switch:checked::after { transform: translateX(20px); }
+.switch-inline { display: inline-flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+
+/* send bar */
+.sendbar {
+  position: sticky; bottom: 0; margin-top: 14px; border-radius: var(--r-xl); padding: 14px 14px 14px 20px;
+  display: grid; grid-template-columns: minmax(220px, 1fr) minmax(0, 1.2fr) auto; gap: 18px; align-items: center;
+}
+.meter-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--muted); margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.meter { height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.meter-fill { height: 100%; width: 0; border-radius: inherit; background: var(--grad); transition: width .4s var(--ease), background .3s; }
+.meter-fill.over { background: var(--bad); }
+.hexbox { grid-column: 1 / -1; margin: 0; font: 13px/1.6 var(--mono); color: var(--muted); background: var(--surface-3); border-radius: 12px; padding: 10px 14px; word-break: break-all; white-space: pre-wrap; max-height: 110px; overflow: auto; }
+.result { display: flex; align-items: center; gap: 10px; font-weight: 600; min-width: 0; }
+.result .ri { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; flex: none; }
+.result .ri svg { width: 18px; height: 18px; }
+.result .rt { min-width: 0; }
+.result .rt div:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.result .rs { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.result.good .ri { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+.result.bad .ri { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+.result.warn .ri { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.result.bad { color: var(--bad); }
+
+/* ---------------------------------------------------------------- status bento */
+.bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.span-2 { grid-column: span 2; }
+.span-4 { grid-column: 1 / -1; }
+.row-2 { grid-row: span 2; }
+.status-hero { display: flex; gap: 24px; align-items: center; position: relative; overflow: hidden; }
+.status-hero::before {
+  content: ""; position: absolute; inset: auto -20% -60% auto; width: 70%; height: 140%; border-radius: 50%;
+  background: radial-gradient(closest-side, var(--tone-c, rgba(91, 140, 255, .25)), transparent); opacity: .5; pointer-events: none;
+}
+.ring {
+  --tone-c: var(--faint); width: 132px; height: 132px; border-radius: 50%; flex: none; position: relative;
+  background: conic-gradient(from 210deg, var(--tone-c), color-mix(in srgb, var(--tone-c) 20%, transparent), var(--tone-c));
+  display: grid; place-items: center; box-shadow: 0 0 40px -6px var(--tone-c);
+}
+.ring::after { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: var(--bg); opacity: .92; }
+.ring .core { position: relative; z-index: 1; width: 52px; height: 52px; display: grid; place-items: center; color: var(--tone-c); }
+.ring .core svg { width: 42px; height: 42px; }
+.ring.live { animation: breathe 2.6s var(--ease) infinite; }
+@keyframes breathe { 50% { box-shadow: 0 0 60px 2px var(--tone-c); } }
+.tone-good { --tone-c: var(--good); } .tone-bad { --tone-c: var(--bad); } .tone-warn { --tone-c: var(--warn); } .tone-info { --tone-c: var(--info); }
+.status-text { font: 800 34px/1.15 var(--font-display); margin: 4px 0 6px; color: var(--tone-c, var(--text)); }
+.status-hero .row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+.kpi { display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; }
+.kpi-top { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 13px; font-weight: 600; }
+.kpi-top svg { width: 18px; height: 18px; opacity: .8; }
+.kpi-val { font: 800 32px/1 var(--font-display); font-variant-numeric: tabular-nums; margin-top: 14px; letter-spacing: -.5px; }
+.kpi-val small { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
+.vlist { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.vrow { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 11px 14px; border-radius: 14px; background: var(--surface-3); }
+.vrow .k { font-family: var(--mono); color: var(--muted); font-size: 13.5px; }
+.vrow .v { font-weight: 700; font-size: 16px; text-align: right; word-break: break-all; }
+.alarm { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; margin-top: 8px; background: color-mix(in srgb, var(--bad) 12%, transparent); color: var(--bad); font-weight: 600; font-size: 14px; }
+.alarm svg { width: 16px; height: 16px; flex: none; }
+.ok-line { display: flex; align-items: center; gap: 10px; margin-top: 12px; color: var(--good); font-weight: 600; }
+.ok-line svg { width: 18px; height: 18px; }
+.kv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-top: 12px; }
+.kv-item { padding: 11px 14px; border-radius: 14px; background: var(--surface-3); min-width: 0; }
+.kv-item .k { font-size: 12.5px; color: var(--muted); }
+.kv-item .v { font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.note { font-size: 12.5px; color: var(--warn); margin-top: 8px; }
+
+/* ---------------------------------------------------------------- control tiles */
+.group-title { margin: 6px 4px 12px; font: 700 13px/1 var(--font); letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.tile {
+  text-align: left; cursor: pointer; border-radius: var(--r-lg); padding: 16px; min-height: 128px;
+  display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden;
+  transition: transform .2s var(--ease), border-color .2s;
+}
+.tile:hover { transform: translateY(-2px); border-color: var(--stroke-2); }
+.tile:active { transform: scale(.98); }
+.tile .ti { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; background: var(--surface-3); color: var(--text); }
+.tile .ti svg { width: 20px; height: 20px; }
+.tile.accent .ti { background: var(--grad); color: #fff; box-shadow: var(--glow); }
+.tile.caution .ti { color: var(--warn); }
+.tile .tt { font-weight: 700; font-size: 15px; }
+.tile .ts { font-size: 12.5px; color: var(--muted); }
+.tile .code { position: absolute; top: 14px; right: 14px; font: 700 11px/1 var(--mono); padding: 5px 7px; border-radius: 7px; background: var(--surface-3); color: var(--muted); }
+.tile.is-busy { opacity: .7; pointer-events: none; }
+.tile.is-busy .ti::after { content: ""; position: absolute; width: 40px; height: 40px; border-radius: 13px; border: 2px solid #5b8cff; border-right-color: transparent; animation: rot .8s linear infinite; }
+
+/* ---------------------------------------------------------------- tables */
+.table-wrap { max-height: calc(100vh - 470px); min-height: 240px; overflow: auto; border-radius: 14px; border: 1px solid var(--stroke); }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { position: sticky; top: 0; background: var(--surface-2); backdrop-filter: blur(10px); text-align: left; font-weight: 700; color: var(--muted); padding: 11px 14px; z-index: 1; }
+td { padding: 10px 14px; border-top: 1px solid var(--stroke); }
+td.mono { font-family: var(--mono); color: var(--muted); font-size: 12.5px; }
+tr:hover td { background: var(--surface-3); }
+.info-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 14px; align-items: start; }
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.toolbar .field { height: 38px; max-width: 260px; }
+.ulist { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.ulist div { padding: 9px 12px; border-radius: 10px; background: var(--surface-3); font-family: var(--mono); font-size: 13px; }
+
+/* hex view */
+.hex-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.reply { font: 13.5px/1.7 var(--mono); white-space: pre-wrap; word-break: break-all; color: var(--muted); background: var(--surface-3); border-radius: 14px; padding: 14px; min-height: 150px; margin-top: 12px; }
+.reply b { color: var(--text); font-family: var(--font); }
+.examples { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* ---------------------------------------------------------------- activity */
+.activity { grid-column: 1 / -1; border-radius: var(--r-lg); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.act-head { display: flex; align-items: center; gap: 12px; padding: 9px 12px; min-height: 54px; flex-wrap: nowrap; }
+.act-toggle { display: flex; align-items: center; gap: 10px; border: 0; background: none; cursor: pointer; font-weight: 700; padding: 6px 8px; border-radius: 10px; }
+.act-toggle:hover { background: var(--surface-3); }
+.act-toggle svg { width: 16px; height: 16px; transition: transform .3s var(--ease); color: var(--muted); }
+.app:not(.act-collapsed) .act-toggle .chev svg { transform: rotate(180deg); }
+.act-last { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.act-tools { display: flex; align-items: center; gap: 10px; }
+.act-collapsed .act-tools { display: none; }
+.app:not(.act-collapsed) .act-last { display: none; }
+.act-list { flex: 1; overflow: auto; padding: 0 8px 8px; font-size: 13px; }
+.arow {
+  display: grid; grid-template-columns: 96px 110px 28px minmax(0, 1fr) minmax(0, 1.05fr); gap: 10px; align-items: center;
+  padding: 6px 10px; border-radius: 10px; animation: enter .25s var(--ease);
+}
+.arow:hover { background: var(--surface-3); }
+.arow .t { color: var(--faint); font-variant-numeric: tabular-nums; font-size: 12px; }
+.arow .w { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+.arow .d { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; }
+.arow .d svg { width: 14px; height: 14px; }
+.arow .x { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arow .h { font: 12px var(--mono); color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.no-hex .arow { grid-template-columns: 96px 110px 28px minmax(0, 1fr); }
+.no-hex .arow .h { display: none; }
+.k-tx .d { background: rgba(91, 140, 255, .16); color: #7aa2ff; }
+.k-rx .d { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
+.k-error .d { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+.k-error .x { color: var(--bad); }
+.k-info .d { background: var(--surface-3); color: var(--muted); }
+.k-info .x { color: var(--muted); }
+
+/* ---------------------------------------------------------------- toasts / modals */
+/* แจ้งเตือนแบบ "island" กลางด้านบน — ไม่บังปุ่มส่ง/ปุ่มเชื่อมต่อ */
+#toasts { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 50; display: flex; flex-direction: column; gap: 8px; width: min(440px, calc(100vw - 40px)); pointer-events: none; }
+.toast {
+  pointer-events: auto; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start;
+  padding: 14px 16px; border-radius: 16px; animation: tin .4s var(--ease);
+  background: var(--surface-2); border: 1px solid var(--stroke-2); box-shadow: 0 20px 40px -18px rgba(0, 0, 0, .7);
+  backdrop-filter: blur(24px);
+}
+.toast.out { animation: tout .3s var(--ease) forwards; }
+.toast .ti { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; }
+.toast .ti svg { width: 16px; height: 16px; }
+.toast.good .ti { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+.toast.bad .ti { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+.toast.warn .ti { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.toast.info .ti { background: rgba(91, 140, 255, .16); color: #7aa2ff; }
+.toast b { display: block; font-size: 14px; }
+.toast span { font-size: 13px; color: var(--muted); word-break: break-word; }
+@keyframes tin { from { opacity: 0; transform: translateY(-16px) scale(.94); } }
+@keyframes tout { to { opacity: 0; transform: translateY(-12px) scale(.96); } }
+
+.backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(3, 6, 14, .55); backdrop-filter: blur(6px); display: grid; place-items: center; animation: fade .25s; padding: 20px; }
+:root[data-theme="light"] .backdrop { background: rgba(30, 41, 59, .25); }
+@keyframes fade { from { opacity: 0; } }
+.modal { width: min(560px, 100%); border-radius: var(--r-xl); padding: 24px; animation: pop .35s var(--ease); background: var(--surface-2); border: 1px solid var(--stroke-2); box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .8); backdrop-filter: blur(30px); max-height: calc(100vh - 40px); overflow: auto; }
+@keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+.modal h3 { margin: 0 0 4px; font: 700 20px/1.3 var(--font-display); }
+.modal .form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
+.modal .form .full { grid-column: 1 / -1; }
+.modal .foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.tips { margin: 18px 0 0; padding: 14px 16px; border-radius: 14px; background: var(--surface-3); font-size: 13px; color: var(--muted); line-height: 1.7; }
+.tips b { color: var(--text); }
+
+.palette { width: min(640px, 100%); align-self: start; margin-top: 12vh; border-radius: var(--r-xl); overflow: hidden; background: var(--surface-2); border: 1px solid var(--stroke-2); box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .8); backdrop-filter: blur(30px); animation: pop .3s var(--ease); }
+.palette .pin { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--stroke); }
+.palette .pin svg { width: 18px; height: 18px; color: var(--muted); }
+.palette input { flex: 1; border: 0; background: transparent; outline: none; font-size: 17px; }
+.palette .plist { max-height: 380px; overflow: auto; padding: 8px; }
+.pitem { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px; cursor: pointer; }
+.pitem svg { width: 18px; height: 18px; color: var(--muted); }
+.pitem .pg { margin-left: auto; font-size: 12px; color: var(--faint); }
+.pitem.sel { background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--stroke-2); }
+
+.banner { position: fixed; left: 50%; top: 82px; transform: translateX(-50%); z-index: 60; padding: 10px 16px; border-radius: 99px; background: var(--bad); color: #fff; font-weight: 700; font-size: 13.5px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .6); }
+
+.welcome { display: grid; place-items: center; text-align: center; padding: 60px 20px; }
+.welcome .logo { width: 72px; height: 72px; border-radius: 22px; margin-bottom: 18px; }
+.welcome .logo svg { width: 38px; height: 38px; }
+.welcome h2 { font: 800 28px/1.2 var(--font-display); margin: 0 0 8px; }
+
+@media (max-width: 1180px) {
+  .app { grid-template-columns: 250px minmax(0, 1fr); }
+  .send-grid, .info-grid, .hex-grid { grid-template-columns: 1fr; }
+  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .brand { min-width: 0; }
+  .sendbar { grid-template-columns: 1fr auto; }
+  .sendbar .result { grid-column: 1 / -1; grid-row: 2; }
+}
+</style>
+</head>
+<body>
+<div class="aurora"><i></i><i></i><i></i></div>
+
+<div class="app" id="app">
+  <header class="topbar glass">
+    <div class="brand">
+      <div class="logo" data-icon="printer"></div>
+      <div>
+        <div class="brand-title">Dikai D03S</div>
+        <div class="brand-sub">ศูนย์ส่งข้อมูลเครื่องพิมพ์ · DGCP v2.0</div>
+      </div>
+    </div>
+    <button class="cmdk" id="btnPalette" type="button"><i data-icon="search"></i><span>ค้นหาเครื่องพิมพ์หรือคำสั่ง…</span><kbd>Ctrl</kbd><kbd>K</kbd></button>
+    <div class="top-actions">
+      <span class="link-state" id="linkState"><span class="dot good"></span>พร้อม</span>
+      <button class="icon-btn" id="btnTheme" type="button" title="สลับธีมสว่าง/มืด"></button>
+      <span class="ver" id="ver"></span>
+    </div>
+  </header>
+
+  <aside class="rail">
+    <div class="rail-head"><h2>เครื่องพิมพ์</h2><span class="count" id="printerCount">0</span></div>
+    <div class="printer-list" id="printerList"></div>
+    <button class="add-printer" id="btnAddPrinter" type="button"><i data-icon="plus"></i>เพิ่มเครื่องพิมพ์</button>
+    <div class="rail-foot">1 เครื่อง = 1 IP · กดส่งได้เลย โปรแกรมเชื่อมต่อให้อัตโนมัติ</div>
+  </aside>
+
+  <main class="main" id="main">
+    <section class="hero glass" id="hero"></section>
+    <nav class="seg glass" id="nav">
+      <span class="seg-pill"></span>
+      <button data-view="send" type="button"><i data-icon="send"></i>ส่งข้อมูล</button>
+      <button data-view="status" type="button"><i data-icon="activity"></i>สถานะ</button>
+      <button data-view="control" type="button"><i data-icon="sliders"></i>ควบคุม</button>
+      <button data-view="info" type="button"><i data-icon="chip"></i>ข้อมูลเครื่อง</button>
+      <button data-view="hex" type="button"><i data-icon="code"></i>HEX</button>
+    </nav>
+
+    <div class="views">
+      <!-- ============================================================ ส่งข้อมูล -->
+      <section class="view" data-view="send">
+        <div class="send-grid">
+          <div class="card glass">
+            <div class="card-head">
+              <div><h3>ข้อมูลที่จะพิมพ์</h3><p class="sub">เลือกแม่แบบ แล้วใส่ค่าของตัวแปรแต่ละตัว</p></div>
+              <div class="head-actions">
+                <button class="btn sm" id="btnLoadFiles" type="button"><span class="spin"></span><i class="ico" data-icon="list"></i>รายชื่อแม่แบบ</button>
+                <button class="btn sm" id="btnFromDevice" type="button"><span class="spin"></span><i class="ico" data-icon="download"></i>ดึงจากเครื่อง</button>
+              </div>
+            </div>
+            <label class="label" for="tpl">แม่แบบ <span id="tplNote" class="muted"></span></label>
+            <input class="field big" id="tpl" placeholder="ชื่อแม่แบบในเครื่อง เช่น TEST" autocomplete="off" spellcheck="false">
+            <div class="tchips" id="tplChips"></div>
+            <div class="label-row"><span class="label">ตัวแปร</span><span class="sub">ชื่อต้องตรงตัวพิมพ์เล็ก-ใหญ่ · ภาษาไทย 1 ตัว = 3 ไบต์ · สูงสุด 255 ไบต์ต่อช่อง</span></div>
+            <div class="vars" id="vars"></div>
+            <button class="btn dashed" id="btnAddVar" type="button" style="margin-top:12px"><i data-icon="plus"></i>เพิ่มตัวแปร</button>
+          </div>
+
+          <div class="side-col">
+            <div class="card glass">
+              <div class="card-head"><div><h3>วิธีส่ง</h3><p class="sub">เลือกให้เหมาะกับงาน</p></div></div>
+              <div class="modes" id="modes"></div>
+            </div>
+            <div class="card glass">
+              <div class="opt-row">
+                <div><div class="opt-title">จำนวนพิมพ์</div><div class="sub">0 = ไม่จำกัด จนกว่าจะส่งค่าใหม่</div></div>
+                <div class="stepper"><button type="button" id="allocMinus">−</button><input id="alloc" inputmode="numeric" value="0"><button type="button" id="allocPlus">+</button></div>
+              </div>
+              <div class="divider"></div>
+              <label class="opt-row" style="cursor:pointer">
+                <div><div class="opt-title">ล้างคิวก่อนส่ง</div><div class="sub">ส่ง 38h ก่อน กันงานเก่าค้างในเครื่อง</div></div>
+                <input type="checkbox" class="switch" id="clearFirst">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="sendbar glass">
+          <div>
+            <div class="meter-top"><span id="sizeText">—</span><button class="link" id="btnHex" type="button">แสดง HEX</button></div>
+            <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+          </div>
+          <div class="result" id="sendResult"></div>
+          <button class="btn primary xl" id="btnSend" type="button"><span class="spin"></span><i class="ico" data-icon="send"></i><span class="lbl">ส่งไปเครื่องพิมพ์</span><kbd>Ctrl ↵</kbd></button>
+          <pre class="hexbox hidden" id="hexPreview"></pre>
+        </div>
+      </section>
+
+      <!-- ============================================================ สถานะ -->
+      <section class="view" data-view="status">
+        <div class="bento">
+          <div class="card glass status-hero span-2 row-2" id="stHero">
+            <div class="ring" id="stRing"><div class="core" data-icon="printer"></div></div>
+            <div style="min-width:0">
+              <div class="eyebrow">สถานะเครื่อง</div>
+              <div class="status-text" id="stText">ยังไม่ได้อ่าน</div>
+              <div class="sub" id="stSub">กด "อ่านสถานะ" เพื่อดูข้อมูลล่าสุดจากเครื่อง</div>
+              <div class="row">
+                <button class="btn primary" id="btnReadStatus" type="button"><span class="spin"></span><i class="ico" data-icon="refresh"></i>อ่านสถานะ</button>
+                <label class="switch-inline"><input type="checkbox" class="switch" id="autoStatus">อัตโนมัติทุก</label>
+                <select class="field" id="autoSec" style="width:96px;height:36px">
+                  <option value="2">2 วินาที</option><option value="5">5 วินาที</option><option value="10">10 วินาที</option><option value="30">30 วินาที</option><option value="60">1 นาที</option>
+                </select>
+              </div>
+              <div class="note hidden" id="stNote"></div>
+            </div>
+          </div>
+          <div class="card glass kpi"><div class="kpi-top">พิมพ์รวม<i data-icon="hash"></i></div><div class="kpi-val" id="kTotal">—</div></div>
+          <div class="card glass kpi"><div class="kpi-top">แม่แบบนี้<i data-icon="layers"></i></div><div class="kpi-val" id="kFile">—</div></div>
+          <div class="card glass kpi"><div class="kpi-top">ริบบอนเหลือ<i data-icon="roll"></i></div><div class="kpi-val" id="kRibbon">—</div></div>
+          <div class="card glass kpi"><div class="kpi-top">ความเร็วไลน์<i data-icon="gauge"></i></div><div class="kpi-val" id="kSpeed">—</div></div>
+          <div class="card glass span-2">
+            <div class="card-head" style="margin-bottom:0"><div><h3>แม่แบบที่ใช้อยู่</h3><p class="sub" id="stFile">—</p></div></div>
+            <div class="vlist" id="stVars"></div>
+          </div>
+          <div class="card glass span-2">
+            <div class="card-head" style="margin-bottom:0"><h3>การแจ้งเตือน</h3>
+              <button class="btn sm" data-ctl="70" type="button"><span class="spin"></span><i class="ico" data-icon="bellOff"></i>ล้าง</button></div>
+            <div id="stAlarms"><p class="sub">—</p></div>
+          </div>
+          <div class="card glass span-4">
+            <h3>รายละเอียด</h3>
+            <div class="kv-grid" id="stDetails"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ ควบคุม -->
+      <section class="view" data-view="control">
+        <div id="controlTiles"></div>
+        <div class="card glass" id="timeCard">
+          <div class="card-head" style="margin-bottom:6px"><div><h3>เวลาเครื่อง</h3><p class="sub">ใช้พิมพ์วันผลิต / วันหมดอายุ — ควรตรงกับคอมพิวเตอร์</p></div>
+            <div class="head-actions">
+              <button class="btn sm" id="btnGetTime" type="button"><span class="spin"></span><i class="ico" data-icon="clock"></i>อ่านเวลาเครื่อง</button>
+              <button class="btn sm primary" id="btnSetTime" type="button"><span class="spin"></span><i class="ico" data-icon="refresh"></i>ตั้งตามคอมพิวเตอร์</button>
+            </div></div>
+          <div class="result" id="timeResult"></div>
+        </div>
+      </section>
+
+      <!-- ============================================================ ข้อมูลเครื่อง -->
+      <section class="view" data-view="info">
+        <div class="info-grid">
+          <div class="card glass">
+            <div class="card-head"><div><h3>ค่าเครื่อง</h3><p class="sub">อ่านอย่างเดียว (40h) — IP / Baud / ค่าพิมพ์ ตั้งที่หน้าจอเครื่อง</p></div></div>
+            <div class="toolbar">
+              <button class="btn sm primary" id="btnParams" type="button"><span class="spin"></span><i class="ico" data-icon="download"></i>อ่านค่าเครื่อง</button>
+              <input class="field" id="paramFilter" placeholder="ค้นหา…" autocomplete="off">
+            </div>
+            <div class="table-wrap"><table><thead><tr><th>รายการ</th><th>ค่า</th><th>HEX</th></tr></thead><tbody id="paramBody"><tr><td colspan="3" class="muted">ยังไม่ได้อ่าน</td></tr></tbody></table></div>
+          </div>
+          <div class="card glass">
+            <div class="card-head"><div><h3>ไฟล์ใน USB</h3><p class="sub">A0h</p></div>
+              <button class="btn sm" id="btnUsb" type="button"><span class="spin"></span><i class="ico" data-icon="usb"></i>อ่าน</button></div>
+            <div class="ulist" id="usbList"><p class="sub">—</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ HEX -->
+      <section class="view" data-view="hex">
+        <div class="hex-grid">
+          <div class="card glass">
+            <div class="card-head"><div><h3>ส่งคำสั่ง HEX</h3><p class="sub">สำหรับทดสอบ / ตรวจปัญหา</p></div></div>
+            <textarea class="field" id="rawHex" spellcheck="false">01 3A</textarea>
+            <div class="examples" id="rawExamples"></div>
+            <div class="divider"></div>
+            <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">
+              <label class="switch-inline"><input type="checkbox" class="switch" id="rawAuto" checked>เติม 5A A5 + ความยาวให้อัตโนมัติ (พิมพ์แค่ ST CMD DATA)</label>
+              <label class="switch-inline"><input type="checkbox" class="switch" id="rawWait" checked>รอคำตอบ</label>
+            </div>
+            <button class="btn primary" id="btnRaw" type="button" style="margin-top:16px"><span class="spin"></span><i class="ico" data-icon="send"></i>ส่ง HEX</button>
+          </div>
+          <div class="card glass">
+            <h3>ผลลัพธ์</h3>
+            <div class="reply" id="rawReply">—</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <section class="activity glass" id="activity">
+    <div class="act-head">
+      <button class="act-toggle" id="actToggle" type="button"><span class="dot info"></span>กิจกรรม<span class="count" id="actCount">0</span><i class="chev" data-icon="chevUp"></i></button>
+      <div class="act-last" id="actLast"></div>
+      <div class="act-tools" style="flex:1">
+        <nav class="seg small" id="actFilter">
+          <span class="seg-pill"></span>
+          <button data-f="all" type="button">ทั้งหมด</button>
+          <button data-f="tx" type="button">ส่ง</button>
+          <button data-f="rx" type="button">รับ</button>
+          <button data-f="error" type="button">ผิดพลาด</button>
+        </nav>
+        <label class="switch-inline"><input type="checkbox" class="switch" id="actHex" checked>HEX</label>
+        <label class="switch-inline"><input type="checkbox" class="switch" id="actStatus">แสดงการอ่านสถานะ</label>
+        <span style="flex:1"></span>
+        <button class="btn sm ghost" id="actCopy" type="button"><i data-icon="copy"></i>คัดลอก</button>
+        <button class="btn sm ghost" id="actClear" type="button"><i data-icon="trash"></i>ล้าง</button>
+        <button class="btn sm ghost" id="actFolder" type="button"><i data-icon="folder"></i>โฟลเดอร์ log</button>
+      </div>
+    </div>
+    <div class="act-list" id="actList"></div>
+  </section>
+</div>
+
+<div id="toasts"></div>
+<div id="modalRoot"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   ไอคอน (SVG เส้น)
+   ===================================================================== */
+const ICONS = {
+  printer: '<path d="M7 9V4h10v5"/><rect x="3" y="9" width="18" height="8" rx="2.5"/><path d="M7 14h10v6H7z"/><path d="M17.5 12h.01"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  send: '<path d="M21.5 2.5 10.5 13.5"/><path d="M21.5 2.5 14.5 21.5l-4-8-8-4z"/>',
+  plug: '<path d="M9 7V3M15 7V3"/><path d="M7 7h10v4a5 5 0 0 1-10 0z"/><path d="M12 16v5"/>',
+  unplug: '<path d="M9 7V3M15 7V3"/><path d="M7 7h10v4a5 5 0 0 1-10 0z"/><path d="M12 16v5"/><path d="M3 3l18 18"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+  download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+  list: '<path d="M9 6h12M9 12h12M9 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',
+  play: '<path d="M7 4v16l13-8z"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="2.5"/>',
+  flask: '<path d="M9 3h6M10 3v6L4.5 18.5A1.5 1.5 0 0 0 5.8 21h12.4a1.5 1.5 0 0 0 1.3-2.5L14 9V3"/><path d="M7.5 15h9"/>',
+  zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+  eraser: '<path d="m7 21-4-4L14 6l7 7-8 8z"/><path d="M22 21H7M9.5 11.5l7 7"/>',
+  bellOff: '<path d="M6.3 6.3A6 6 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.3-5"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/><path d="m2 2 20 20"/>',
+  alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  hash: '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>',
+  roll: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
+  usb: '<path d="M12 3v13"/><circle cx="12" cy="18.5" r="2.5"/><path d="M7 8v3l5 3 5-3V8"/><path d="M5.5 6h3v3h-3zM15.5 6h3v3h-3z"/>',
+  code: '<path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
+  activity: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  chevUp: '<path d="m6 15 6-6 6 6"/>',
+  x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  checkCircle: '<circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/>',
+  copy: '<rect x="8" y="8" width="13" height="13" rx="2.5"/><path d="M4 16V5a2 2 0 0 1 2-2h11"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  layers: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+  gauge: '<path d="m12 14 4-4"/><path d="M3.3 18a9 9 0 1 1 17.4 0"/>',
+  chip: '<rect x="6" y="6" width="12" height="12" rx="2.5"/><path d="M10 10h4v4h-4zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',
+  sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  lan: '<rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 14v-3h10v3M12 11V4"/><path d="M8 4h8"/>',
+  serial: '<path d="M3 9h18l-2 7H5z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/>',
+  arrowUp: '<path d="M7 17 17 7M8 7h9v9"/>',
+  arrowDown: '<path d="M17 7 7 17M16 17H7V8"/>',
+  dotIcon: '<circle cx="12" cy="12" r="3"/>',
+  sparkle: '<path d="M12 3.5 13.9 9l5.6 1.9-5.6 1.9L12 18.5 10.1 12.8 4.5 10.9 10.1 9z"/>',
+};
+function icon(name, extra = "") {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${ICONS[name] || ""}</svg>`;
+}
+function hydrateIcons(root = document) {
+  root.querySelectorAll("[data-icon]").forEach(el => {
+    if (el.dataset.done) return;
+    el.dataset.done = "1";
+    el.insertAdjacentHTML("afterbegin", icon(el.dataset.icon));
+  });
+}
+
+/* =====================================================================
+   ตัวช่วย
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtNum = n => (n === null || n === undefined) ? "—" : Number(n).toLocaleString("en-US");
+const utf8Len = s => new TextEncoder().encode(s || "").length;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("dk." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("dk." + k, JSON.stringify(v)); } catch {} },
+};
+
+const TOKEN = (() => {
+  const t = new URLSearchParams(location.search).get("t");
+  try {
+    if (t) { sessionStorage.setItem("dk.t", t); history.replaceState(null, "", "/"); return t; }
+    return sessionStorage.getItem("dk.t") || "";
+  } catch { return t || ""; }
+})();
+
+async function api(path, body) {
+  let r;
+  try {
+    r = await fetch("/api/" + path, {
+      method: body === undefined ? "GET" : "POST",
+      headers: { "Content-Type": "application/json", "X-Token": TOKEN },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("ติดต่อโปรแกรมหลักไม่ได้ (โปรแกรมอาจถูกปิด)");
+  }
+  if (r.status === 401) throw new Error("หมดสิทธิ์เข้าใช้ — ปิดหน้าต่างแล้วเปิดโปรแกรมใหม่");
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || "เกิดข้อผิดพลาด");
+  return j.data;
+}
+
+/** ปุ่มกำลังทำงาน: กันกดซ้ำ + spinner */
+async function busy(btn, fn) {
+  if (btn && btn.dataset.busy) return;
+  if (btn) { btn.dataset.busy = "1"; btn.classList.add("is-busy"); btn.disabled = true; }
+  try { return await fn(); }
+  finally { if (btn) { delete btn.dataset.busy; btn.classList.remove("is-busy"); btn.disabled = false; } }
+}
+
+function toast(tone, title, msg, ms = 4200) {
+  const ic = { good: "checkCircle", bad: "alert", warn: "alert", info: "info" }[tone] || "info";
+  const el = document.createElement("div");
+  el.className = "toast " + tone;
+  el.innerHTML = `<div class="ti">${icon(ic)}</div><div><b>${esc(title)}</b>${msg ? `<span>${esc(msg)}</span>` : ""}</div>`;
+  $("#toasts").appendChild(el);
+  const close = () => { el.classList.add("out"); setTimeout(() => el.remove(), 300); };
+  el.addEventListener("click", close);
+  setTimeout(close, ms);
+  while ($("#toasts").children.length > 4) $("#toasts").firstChild.remove();
+}
+
+function setResult(el, tone, title, sub, spinning = false) {
+  if (!tone) { el.innerHTML = ""; el.className = "result"; return; }
+  const ic = { good: "checkCircle", bad: "alert", warn: "clock", info: "info" }[tone];
+  el.className = "result " + tone;
+  el.innerHTML = `<div class="ri">${spinning ? '<span class="spin"></span>' : icon(ic)}</div><div class="rt"><div>${esc(title)}</div>${sub ? `<div class="rs">${esc(sub)}</div>` : ""}</div>`;
+}
+
+/* =====================================================================
+   สถานะของหน้าจอ
+   ===================================================================== */
+const S = {
+  printers: [],
+  selId: store.get("sel", null),
+  view: store.get("view", "send"),
+  status: {},       // id → status ล่าสุด
+  results: {},      // id → ผลส่งล่าสุด
+  logs: [],
+  filter: store.get("actFilter", "all"),
+  settings: {},
+  limits: { tcp: 1010, serial: 256 },
+  online: true,
+};
+const MODES = [
+  { id: 0, icon: "layers", t: "เลือกแม่แบบ + ใส่ค่า", s: "ใช้ตอนเปลี่ยนสินค้า / ล็อต", code: "34h" },
+  { id: 1, icon: "zap", t: "เปลี่ยนค่าอย่างเดียว", s: "เร็วที่สุด · ค่าเข้าคิวของเครื่อง", code: "35h" },
+  { id: 2, icon: "checkCircle", t: "เปลี่ยนค่า + แจ้งพิมพ์เสร็จ", s: "รอยืนยันทุกชิ้น · ไม่มีงานค้าง", code: "49h" },
+];
+const sel = () => S.printers.find(p => p.id === S.selId) || null;
+
+/* =====================================================================
+   ธีม
+   ===================================================================== */
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("#btnTheme").innerHTML = icon(t === "dark" ? "sun" : "moon");
+  store.set("theme", t);
+}
+applyTheme(store.get("theme", matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+$("#btnTheme").onclick = () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+
+/* =====================================================================
+   segmented control (แถบเลื่อน)
+   ===================================================================== */
+function movePill(nav) {
+  const on = nav.querySelector("button.active"), pill = nav.querySelector(".seg-pill");
+  if (!on || !pill) return;
+  pill.style.left = on.offsetLeft + "px";
+  pill.style.width = on.offsetWidth + "px";
+}
+
+/* =====================================================================
+   รายชื่อเครื่อง (ซ้าย)
+   ===================================================================== */
+const STATE_TXT = { connected: "เชื่อมต่อแล้ว", connecting: "กำลังเชื่อมต่อ…", failed: "เชื่อมต่อไม่ได้", disconnected: "ยังไม่เชื่อมต่อ" };
+const STATE_TONE = { connected: "good pulse", connecting: "warn pulse", failed: "bad", disconnected: "" };
+
+function renderRail() {
+  $("#printerCount").textContent = S.printers.length;
+  $("#printerList").innerHTML = S.printers.map(p => {
+    const st = S.status[p.id];
+    const live = st && p.state === "connected" ? ` · ${esc(st.text)}` : "";
+    return `<button class="pcard glass ${p.id === S.selId ? "active" : ""}" data-id="${esc(p.id)}" type="button">
+      <div class="picon">${icon(p.kind === "serial" ? "serial" : "printer")}</div>
+      <div style="min-width:0"><div class="pname">${esc(p.name)}</div><div class="paddr">${esc(p.address)} · ST ${p.station}${live}</div></div>
+      <div class="pstate"><span class="dot ${STATE_TONE[p.state] || ""}"></span></div>
+    </button>`;
+  }).join("");
+}
+$("#printerList").addEventListener("click", e => {
+  const c = e.target.closest(".pcard");
+  if (c) selectPrinter(c.dataset.id);
+});
+
+function renderHero() {
+  const p = sel();
+  const hero = $("#hero");
+  if (!p) {
+    hero.innerHTML = `<div class="hero-main"><h1 class="hero-title">ยังไม่มีเครื่องพิมพ์</h1><div class="sub">กด "เพิ่มเครื่องพิมพ์" ทางซ้ายเพื่อเริ่มต้น</div></div>`;
+    return;
+  }
+  const tone = { connected: "tone-good", connecting: "tone-warn", failed: "tone-bad" }[p.state] || "";
+  const connected = p.state === "connected";
+  hero.innerHTML = `
+    <div class="hero-main">
+      <h1 class="hero-title">${esc(p.name)}</h1>
+      <div class="chips">
+        <span class="chip ${tone}"><span class="dot ${STATE_TONE[p.state] || ""}"></span>${STATE_TXT[p.state] || p.state}</span>
+        <span class="chip">${icon(p.kind === "serial" ? "serial" : "lan")}${esc(p.address)}</span>
+        <span class="chip">ST ${p.station}</span>
+        <span class="chip">สูงสุด ${fmtNum(p.maxFrame)} ไบต์/ครั้ง</span>
+      </div>
+      ${p.state === "failed" && p.lastError ? `<div class="hero-error">${esc(p.lastError)}</div>` : ""}
+    </div>
+    <div class="hero-actions">
+      ${connected
+        ? `<button class="btn" id="btnDisconnect" type="button">${icon("unplug")}ตัดการเชื่อมต่อ</button>`
+        : `<button class="btn primary" id="btnConnect" type="button"><span class="spin"></span><i class="ico">${icon("plug")}</i>เชื่อมต่อ</button>`}
+      <button class="icon-btn" id="btnEdit" type="button" title="แก้ไขเครื่อง">${icon("edit")}</button>
+      <button class="icon-btn danger" id="btnDelete" type="button" title="ลบเครื่อง">${icon("trash")}</button>
+    </div>`;
+  const bc = $("#btnConnect");
+  if (bc) bc.onclick = () => connectPrinter(bc);
+  const bd = $("#btnDisconnect");
+  if (bd) bd.onclick = () => api("printers/disconnect", { id: p.id }).then(upsertPrinter).catch(e => toast("bad", "ตัดการเชื่อมต่อไม่สำเร็จ", e.message));
+  $("#btnEdit").onclick = () => openPrinterModal(p);
+  $("#btnDelete").onclick = () => deletePrinter(p);
+}
+
+async function connectPrinter(btn) {
+  const p = sel();
+  if (!p) return;
+  await busy(btn, async () => {
+    try {
+      upsertPrinter(await api("printers/connect", { id: p.id }));
+      toast("good", "เชื่อมต่อแล้ว", p.name + " · " + p.address);
+    } catch (e) {
+      toast("bad", "เชื่อมต่อไม่สำเร็จ", e.message, 6000);
+    }
+  });
+}
+
+function upsertPrinter(dto, keepDraft = true) {
+  const i = S.printers.findIndex(p => p.id === dto.id);
+  if (i < 0) S.printers.push(dto);
+  else {
+    const old = S.printers[i];
+    S.printers[i] = { ...dto, draft: keepDraft && old.draft ? old.draft : dto.draft };
+  }
+  renderRail();
+  if (dto.id === S.selId) renderHero();
+}
+
+function selectPrinter(id) {
+  if (S.selId !== id) flushDraft();
+  S.selId = id;
+  store.set("sel", id);
+  renderRail();
+  renderHero();
+  loadDraftToForm();
+  renderStatus(S.status[id]);
+  const r = S.results[id];
+  if (r) setResult($("#sendResult"), r.tone, r.title, r.sub, r.spinning); else setResult($("#sendResult"));
+  $("#paramBody").innerHTML = `<tr><td colspan="3" class="muted">ยังไม่ได้อ่าน</td></tr>`;
+  $("#usbList").innerHTML = `<p class="sub">—</p>`;
+  setResult($("#timeResult"));
+}
+
+/* =====================================================================
+   แท็บ
+   ===================================================================== */
+function setView(v) {
+  S.view = v;
+  store.set("view", v);
+  $$("#nav button").forEach(b => b.classList.toggle("active", b.dataset.view === v));
+  $$(".view").forEach(s => s.classList.toggle("active", s.dataset.view === v));
+  movePill($("#nav"));
+  if (v === "send") setTimeout(() => $("#tpl").focus({ preventScroll: true }), 50);
+}
+$("#nav").addEventListener("click", e => {
+  const b = e.target.closest("button[data-view]");
+  if (b) setView(b.dataset.view);
+});
+
+/* =====================================================================
+   ส่งข้อมูล
+   ===================================================================== */
+function renderModes(mode) {
+  $("#modes").innerHTML = MODES.map(m => `
+    <button class="mode ${m.id === mode ? "on" : ""}" data-mode="${m.id}" type="button">
+      <div class="mi">${icon(m.icon)}</div>
+      <div><div class="mt">${m.t}</div><div class="ms">${m.s}</div></div>
+      <span class="code">${m.code}</span>
+    </button>`).join("");
+}
+$("#modes").addEventListener("click", e => {
+  const b = e.target.closest(".mode");
+  if (!b) return;
+  const d = draft();
+  if (!d) return;
+  d.mode = +b.dataset.mode;
+  renderModes(d.mode);
+  updateTemplateState();
+  onDraftChanged();
+});
+
+function draft() {
+  const p = sel();
+  if (!p) return null;
+  p.draft = p.draft || { template: "", variables: [], mode: 0, allocation: 0, clearFirst: false, knownTemplates: [] };
+  return p.draft;
+}
+
+function varRow(v, i) {
+  const n = utf8Len(v.value);
+  return `<div class="var" data-i="${i}">
+    <input class="field name" value="${esc(v.name)}" placeholder="ชื่อตัวแปร" spellcheck="false" autocomplete="off">
+    <input class="field value" value="${esc(v.value)}" placeholder="ค่าที่จะพิมพ์" autocomplete="off">
+    <span class="bytes ${n > 255 ? "over" : ""}">${n}/255 B</span>
+    <button class="icon-btn sm danger" data-del type="button" title="ลบตัวแปร">${icon("x")}</button>
+  </div>`;
+}
+
+function renderVars() {
+  const d = draft();
+  const box = $("#vars");
+  if (!d) { box.innerHTML = ""; return; }
+  if (d.variables.length === 0) {
+    box.innerHTML = `<div class="empty"><b>ยังไม่มีตัวแปร</b><br>กด <b>ดึงจากเครื่อง</b> เพื่ออ่านชื่อตัวแปรของแม่แบบอัตโนมัติ หรือกด <b>เพิ่มตัวแปร</b> แล้วพิมพ์ชื่อเอง</div>`;
+    return;
+  }
+  box.innerHTML = d.variables.map(varRow).join("");
+}
+
+function renderTemplateChips() {
+  const d = draft();
+  const known = (d && d.knownTemplates) || [];
+  const cur = (d && d.template || "").toLowerCase();
+  const list = known.slice(0, 40);
+  $("#tplChips").innerHTML = list.map(t => `<button class="tchip ${t.toLowerCase() === cur ? "on" : ""}" data-t="${esc(t)}" type="button">${esc(t)}</button>`).join("")
+    + (known.length > 40 ? `<span class="sub">และอีก ${known.length - 40} แม่แบบ — พิมพ์ชื่อเพื่อค้นหา</span>` : "");
+}
+$("#tplChips").addEventListener("click", e => {
+  const c = e.target.closest(".tchip");
+  if (!c || $("#tpl").disabled) return;
+  $("#tpl").value = c.dataset.t;
+  draft().template = c.dataset.t;
+  renderTemplateChips();
+  onDraftChanged();
+});
+
+function updateTemplateState() {
+  const d = draft();
+  const disabled = d && d.mode !== 0;
+  $("#tpl").disabled = !!disabled;
+  $("#tplNote").textContent = disabled ? "· โหมดนี้ใช้แม่แบบที่เลือกไว้ในเครื่องแล้ว" : "";
+  $("#tplChips").style.opacity = disabled ? .45 : 1;
+}
+
+function loadDraftToForm() {
+  const d = draft();
+  if (!d) return;
+  $("#tpl").value = d.template || "";
+  $("#alloc").value = d.allocation || 0;
+  $("#clearFirst").checked = !!d.clearFirst;
+  renderModes(d.mode || 0);
+  renderVars();
+  renderTemplateChips();
+  updateTemplateState();
+  schedulePreview(0);
+}
+
+$("#tpl").addEventListener("input", e => { draft().template = e.target.value; renderTemplateChips(); onDraftChanged(); });
+$("#vars").addEventListener("input", e => {
+  const row = e.target.closest(".var");
+  if (!row) return;
+  const v = draft().variables[+row.dataset.i];
+  if (e.target.classList.contains("name")) v.name = e.target.value;
+  else {
+    v.value = e.target.value;
+    const n = utf8Len(v.value), b = row.querySelector(".bytes");
+    b.textContent = n + "/255 B";
+    b.classList.toggle("over", n > 255);
+  }
+  onDraftChanged();
+});
+$("#vars").addEventListener("click", e => {
+  const del = e.target.closest("[data-del]");
+  if (!del) return;
+  const row = del.closest(".var");
+  draft().variables.splice(+row.dataset.i, 1);
+  renderVars();
+  onDraftChanged();
+});
+$("#vars").addEventListener("keydown", e => {
+  // Enter ในช่องค่า → ไปช่องถัดไป
+  if (e.key === "Enter" && !e.ctrlKey && e.target.classList.contains("value")) {
+    const all = $$("#vars .value");
+    const i = all.indexOf(e.target);
+    if (i >= 0 && i < all.length - 1) { e.preventDefault(); all[i + 1].focus(); all[i + 1].select(); }
+  }
+});
+$("#btnAddVar").onclick = () => {
+  draft().variables.push({ name: "", value: "" });
+  renderVars();
+  const names = $$("#vars .name");
+  names[names.length - 1]?.focus();
+};
+$("#alloc").addEventListener("input", () => {
+  const v = Math.max(0, Math.min(65535, parseInt($("#alloc").value.replace(/\D/g, "") || "0", 10)));
+  draft().allocation = v;
+  onDraftChanged();
+});
+$("#alloc").addEventListener("blur", () => { $("#alloc").value = draft()?.allocation ?? 0; });
+$("#allocMinus").onclick = () => { const d = draft(); d.allocation = Math.max(0, (d.allocation || 0) - 1); $("#alloc").value = d.allocation; onDraftChanged(); };
+$("#allocPlus").onclick = () => { const d = draft(); d.allocation = Math.min(65535, (d.allocation || 0) + 1); $("#alloc").value = d.allocation; onDraftChanged(); };
+$("#clearFirst").onchange = e => { draft().clearFirst = e.target.checked; onDraftChanged(); };
+$("#btnHex").onclick = () => {
+  const h = $("#hexPreview");
+  h.classList.toggle("hidden");
+  $("#btnHex").textContent = h.classList.contains("hidden") ? "แสดง HEX" : "ซ่อน HEX";
+  store.set("showPreviewHex", !h.classList.contains("hidden"));
+};
+if (store.get("showPreviewHex", false)) { $("#hexPreview").classList.remove("hidden"); $("#btnHex").textContent = "ซ่อน HEX"; }
+
+let previewTimer = 0, draftTimer = 0, previewSeq = 0;
+function onDraftChanged() {
+  schedulePreview(140);
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(flushDraft, 700);
+}
+function payload() {
+  const p = sel(), d = draft();
+  return { id: p.id, template: d.template, variables: d.variables, mode: d.mode, allocation: d.allocation, clearFirst: d.clearFirst };
+}
+function flushDraft() {
+  clearTimeout(draftTimer);
+  const p = sel();
+  if (!p || !p.draft) return;
+  api("printers/draft", payload()).catch(() => {});
+}
+function schedulePreview(ms) {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(async () => {
+    const p = sel();
+    if (!p) return;
+    const seq = ++previewSeq;
+    try {
+      const r = await api("preview", payload());
+      if (seq !== previewSeq) return;
+      const over = r.length > r.max;
+      $("#meterFill").style.width = Math.min(100, r.length / r.max * 100) + "%";
+      $("#meterFill").classList.toggle("over", over);
+      $("#sizeText").innerHTML = r.error
+        ? `<span style="color:var(--warn)">${esc(r.error)}</span>`
+        : `ข้อมูลที่จะส่ง <b style="color:var(--text)">${r.length}</b> / ${r.max} ไบต์${over ? ' <span style="color:var(--bad)">· ยาวเกิน</span>' : ""}`;
+      $("#hexPreview").textContent = r.hex || "—";
+    } catch { /* ไม่ต้องแจ้ง */ }
+  }, ms);
+}
+
+async function doSend() {
+  const p = sel();
+  if (!p) return;
+  const btn = $("#btnSend");
+  if (btn.dataset.busy) return;
+  const id = p.id, d = draft();
+  if (d.mode === 0 && !(d.template || "").trim()) {
+    setResult($("#sendResult"), "bad", "กรุณาระบุชื่อแม่แบบ", "หรือเลือกโหมด เปลี่ยนค่าอย่างเดียว");
+    btn.classList.add("shake"); setTimeout(() => btn.classList.remove("shake"), 450);
+    $("#tpl").focus();
+    return;
+  }
+  setResult($("#sendResult"), "info", "กำลังส่ง…", p.name, true);
+  await busy(btn, async () => {
+    try {
+      const r = await api("send", payload());
+      upsertPrinter(r.printer);
+      const res = r.waitingPrintDone
+        ? { tone: "warn", title: "เครื่องรับแล้ว · รอพิมพ์เสร็จ…", sub: r.time, spinning: true }
+        : { tone: "good", title: r.mode === 2 ? "พิมพ์เสร็จแล้ว" : "ส่งสำเร็จ", sub: r.time + (r.mode === 0 ? " · แม่แบบ " + d.template : ""), spinning: false };
+      S.results[id] = res;
+      if (S.selId === id) {
+        setResult($("#sendResult"), res.tone, res.title, res.sub, res.spinning);
+        if (r.mode === 0 && d.template && !(d.knownTemplates || []).some(t => t.toLowerCase() === d.template.toLowerCase())) {
+          d.knownTemplates = [...(d.knownTemplates || []), d.template];
+          renderTemplateChips();
+        }
+      }
+      btn.classList.add("is-ok");
+      btn.querySelector(".lbl").textContent = "ส่งแล้ว";
+      setTimeout(() => { btn.classList.remove("is-ok"); btn.querySelector(".lbl").textContent = "ส่งไปเครื่องพิมพ์"; }, 1300);
+    } catch (e) {
+      S.results[id] = { tone: "bad", title: "ส่งไม่สำเร็จ", sub: e.message };
+      if (S.selId === id) setResult($("#sendResult"), "bad", "ส่งไม่สำเร็จ", e.message);
+      btn.classList.add("shake"); setTimeout(() => btn.classList.remove("shake"), 450);
+    }
+  });
+}
+$("#btnSend").onclick = doSend;
+
+$("#btnLoadFiles").onclick = e => busy(e.currentTarget, async () => {
+  const p = sel();
+  try {
+    const files = await api("files", { id: p.id, usb: false });
+    const d = draft();
+    d.knownTemplates = files.filter(Boolean);
+    renderTemplateChips();
+    toast("good", `พบ ${files.length} แม่แบบ`, "แตะชื่อแม่แบบเพื่อเลือก");
+  } catch (err) { toast("bad", "อ่านรายชื่อแม่แบบไม่สำเร็จ", err.message, 6000); }
+});
+
+$("#btnFromDevice").onclick = e => busy(e.currentTarget, async () => {
+  const p = sel();
+  try {
+    const st = await api("status", { id: p.id });
+    S.status[p.id] = st;
+    renderStatus(st);
+    renderRail();
+    if (!st.hasNames) { toast("warn", "เครื่องไม่ได้ส่งชื่อตัวแปรมา", "ต้องพิมพ์ชื่อตัวแปรเอง"); return; }
+    const d = draft();
+    d.template = st.fileName || "";
+    d.variables = st.variables.map(v => ({ name: v.name || "", value: v.value || "" }));
+    if (d.template && !(d.knownTemplates || []).some(t => t.toLowerCase() === d.template.toLowerCase())) d.knownTemplates = [...(d.knownTemplates || []), d.template];
+    loadDraftToForm();
+    onDraftChanged();
+    toast("good", `แม่แบบ "${st.fileName}"`, `มี ${st.variables.length} ตัวแปร — แก้ค่าแล้วกดส่ง`);
+    $("#vars .value")?.focus();
+  } catch (err) { toast("bad", "อ่านจากเครื่องไม่สำเร็จ", err.message, 6000); }
+});
+
+/* =====================================================================
+   สถานะ
+   ===================================================================== */
+function renderStatus(st) {
+  const ring = $("#stRing"), hero = $("#stHero");
+  ring.className = "ring";
+  hero.className = "card glass status-hero span-2 row-2";
+  if (!st) {
+    $("#stText").textContent = "ยังไม่ได้อ่าน";
+    $("#stText").style.color = "";
+    $("#stSub").textContent = 'กด "อ่านสถานะ" เพื่อดูข้อมูลล่าสุดจากเครื่อง';
+    ["#kTotal", "#kFile", "#kRibbon", "#kSpeed"].forEach(k => $(k).textContent = "—");
+    $("#stFile").textContent = "—";
+    $("#stVars").innerHTML = "";
+    $("#stAlarms").innerHTML = `<p class="sub">—</p>`;
+    $("#stDetails").innerHTML = "";
+    $("#stNote").classList.add("hidden");
+    return;
+  }
+  const tone = "tone-" + st.tone;
+  ring.classList.add(tone);
+  hero.classList.add(tone);
+  if (st.code === 3) ring.classList.add("live");
+  $("#stText").textContent = st.text;
+  $("#stText").style.color = "var(--tone-c)";
+  $("#stSub").textContent = "อ่านเมื่อ " + st.readAt + (st.time ? " · เวลาเครื่อง " + st.time : "");
+  $("#kTotal").textContent = fmtNum(st.totalCounter);
+  $("#kFile").textContent = fmtNum(st.fileCounter);
+  $("#kRibbon").textContent = fmtNum(st.ribbonRemaining);
+  $("#kSpeed").innerHTML = `${fmtNum(st.lineSpeed)}<small>· ความถี่ ${fmtNum(st.printFrequency)}</small>`;
+  $("#stFile").textContent = st.fileName || "—";
+  $("#stVars").innerHTML = st.variables.length
+    ? st.variables.map((v, i) => `<div class="vrow"><span class="k">${esc(v.name || "#" + (i + 1))}</span><span class="v">${esc(v.value)}</span></div>`).join("")
+    : `<p class="sub">ไม่มีตัวแปร</p>`;
+  $("#stAlarms").innerHTML = st.alarms.length
+    ? st.alarms.map(a => `<div class="alarm">${icon("alert")}${esc(a)}</div>`).join("")
+    : `<div class="ok-line">${icon("checkCircle")}ไม่มีความผิดปกติ</div>`;
+  const rows = [
+    ["ตัวนับริบบอนม้วนนี้", fmtNum(st.ribbonCounter)],
+    ["ตัวนับริบบอนม้วนก่อน", fmtNum(st.previousRibbonCounter)],
+    ["เปลี่ยนริบบอนล่าสุด", st.ribbonChangeTime || "—"],
+    ["ความสูงงานพิมพ์", fmtNum(st.printHeight)],
+  ];
+  if (st.printSignal !== null) rows.push(["สัญญาณสั่งพิมพ์", st.printSignal ? "มี" : "ไม่มี"]);
+  if (st.encoderSignal !== null) rows.push(["สัญญาณ encoder", st.encoderSignal ? "มี" : "ไม่มี"]);
+  if (st.localStation !== null) rows.push(["เลขเครื่อง (ST)", st.localStation]);
+  if (st.parametersUpdated !== null) rows.push(["ค่าเครื่องถูกแก้", st.parametersUpdated ? "ใช่" : "ไม่"]);
+  rows.push(["Error bits", st.errorBits]);
+  $("#stDetails").innerHTML = rows.map(([k, v]) => `<div class="kv-item"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join("");
+  $("#stNote").classList.toggle("hidden", !st.layoutMismatch);
+  $("#stNote").textContent = st.layoutMismatch ? "ข้อมูลไม่ตรงรูปแบบในเอกสารทั้งหมด — แสดงเท่าที่อ่านได้ (ส่ง log ให้ผู้ดูแลตรวจ)" : "";
+}
+
+async function readStatus(btn, quiet = false) {
+  const p = sel();
+  if (!p) return;
+  const id = p.id;
+  const run = async () => {
+    try {
+      const st = await api("status", { id });
+      S.status[id] = st;
+      if (S.selId === id) renderStatus(st);
+      renderRail();
+    } catch (e) {
+      if (!quiet) toast("bad", "อ่านสถานะไม่สำเร็จ", e.message, 6000);
+      else $("#stSub").textContent = "อ่านอัตโนมัติไม่สำเร็จ: " + e.message;
+    }
+  };
+  return btn ? busy(btn, run) : run();
+}
+$("#btnReadStatus").onclick = e => readStatus(e.currentTarget);
+
+let autoTimer = 0, autoRunning = false;
+function updateAuto() {
+  clearInterval(autoTimer);
+  if (!$("#autoStatus").checked) return;
+  const sec = +$("#autoSec").value || 5;
+  autoTimer = setInterval(async () => {
+    const p = sel();
+    if (!p || p.state !== "connected" || autoRunning || document.hidden) return;
+    autoRunning = true;
+    try { await readStatus(null, true); } finally { autoRunning = false; }
+  }, sec * 1000);
+}
+$("#autoStatus").onchange = updateAuto;
+$("#autoSec").onchange = () => { api("settings", { autoStatusSeconds: +$("#autoSec").value }).catch(() => {}); updateAuto(); };
+
+/* =====================================================================
+   ควบคุม
+   ===================================================================== */
+const CONTROLS = [
+  { group: "การพิมพ์", items: [
+    { cmd: 0x42, icon: "play", t: "เริ่ม", s: "เริ่มการพิมพ์", cls: "accent" },
+    { cmd: 0x43, icon: "stop", t: "หยุด", s: "หยุดการพิมพ์" },
+    { cmd: 0x44, icon: "flask", t: "ทดสอบพิมพ์", s: "พิมพ์ทดสอบ 1 ครั้ง" },
+    { cmd: 0x4B, icon: "zap", t: "สั่งพิมพ์ 1 ครั้ง", s: "แทนสัญญาณเซนเซอร์จากเครื่องแพ็ค" },
+  ]},
+  { group: "ล้างค่า", items: [
+    { cmd: 0x38, icon: "eraser", t: "ล้างคิว / บัฟเฟอร์", s: "ล้างงานที่ค้างในเครื่อง", confirm: "ล้างคิวงานที่ค้างในเครื่อง? (เอกสารระบุว่าล้างแม่แบบที่ใช้อยู่และบัฟเฟอร์)", cls: "caution" },
+    { cmd: 0x46, icon: "bellOff", t: "ล้างการแจ้งเตือน", s: "หลังแก้ปัญหาที่เครื่องแล้ว" },
+    { cmd: 0x36, icon: "bellOff", t: "ล้างคำเตือน", s: "คำเตือนปัจจุบัน" },
+    { cmd: 0x45, icon: "hash", t: "ล้างตัวนับพิมพ์", s: "ตัวนับรวมเป็น 0", confirm: "ล้างตัวนับจำนวนพิมพ์เป็น 0?", cls: "caution" },
+    { cmd: 0x37, icon: "layers", t: "ล้างตัวนับแม่แบบ", s: "ตัวนับของแม่แบบที่ใช้อยู่", confirm: "ล้างตัวนับของแม่แบบที่ใช้อยู่เป็น 0?", cls: "caution" },
+    { cmd: 0x39, icon: "roll", t: "ล้างตัวนับริบบอน", s: "ใช้ตอนเปลี่ยนม้วนใหม่", confirm: "ล้างตัวนับริบบอน (ใช้ตอนเปลี่ยนม้วนใหม่)?", cls: "caution" },
+  ]},
+];
+const hex2 = n => n.toString(16).toUpperCase().padStart(2, "0") + "h";
+$("#controlTiles").innerHTML = CONTROLS.map(g => `
+  <h3 class="group-title">${g.group}</h3>
+  <div class="tiles">${g.items.map(c => `
+    <button class="tile glass ${c.cls || ""}" data-ctl="${c.cmd}" type="button">
+      <span class="code">${hex2(c.cmd)}</span>
+      <div class="ti" style="position:relative">${icon(c.icon)}</div>
+      <div><div class="tt">${c.t}</div><div class="ts">${c.s}</div></div>
+    </button>`).join("")}</div>`).join("");
+
+const CTL_INDEX = Object.fromEntries(CONTROLS.flatMap(g => g.items).map(c => [c.cmd, c]));
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-ctl]");
+  if (!b) return;
+  const cmd = +b.dataset.ctl, c = CTL_INDEX[cmd], p = sel();
+  if (!p) return;
+  if (c && c.confirm && !(await confirmBox({ title: c.t, message: c.confirm, ok: "ยืนยัน", tone: "warn" }))) return;
+  await busy(b, async () => {
+    try {
+      const msg = await api("control", { id: p.id, cmd });
+      toast("good", msg, p.name);
+    } catch (err) { toast("bad", (c ? c.t : "คำสั่ง") + "ไม่สำเร็จ", err.message, 6000); }
+  });
+});
+
+$("#btnGetTime").onclick = e => busy(e.currentTarget, async () => {
+  try {
+    const r = await api("time/get", { id: sel().id });
+    if (!r.device) { setResult($("#timeResult"), "warn", "เครื่องตอบเวลามาแต่อ่านไม่ได้", "ดู HEX ในกิจกรรม"); return; }
+    const d = r.diffSeconds, ok = Math.abs(d) < 60;
+    setResult($("#timeResult"), ok ? "good" : "warn", "เวลาเครื่อง " + r.device,
+      Math.abs(d) < 2 ? "ตรงกับคอมพิวเตอร์" : `${d > 0 ? "เร็วกว่า" : "ช้ากว่า"}คอมพิวเตอร์ ${Math.abs(d).toLocaleString()} วินาที`);
+  } catch (err) { setResult($("#timeResult"), "bad", "อ่านเวลาไม่สำเร็จ", err.message); }
+});
+$("#btnSetTime").onclick = async e => {
+  const btn = e.currentTarget;
+  const now = new Date().toLocaleString("sv-SE").replace("T", " ");
+  if (!(await confirmBox({ title: "ตั้งเวลาเครื่อง", message: `ตั้งเวลาเครื่องเป็น ${now} ตามคอมพิวเตอร์นี้? มีผลกับวันที่/เวลาที่พิมพ์บนสินค้า`, ok: "ตั้งเวลา" }))) return;
+  busy(btn, async () => {
+    try {
+      const t = await api("time/set", { id: sel().id });
+      setResult($("#timeResult"), "good", "ตั้งเวลาเครื่องแล้ว", t);
+    } catch (err) { setResult($("#timeResult"), "bad", "ตั้งเวลาไม่สำเร็จ", err.message); }
+  });
+};
+
+/* =====================================================================
+   ข้อมูลเครื่อง
+   ===================================================================== */
+let params = [];
+function renderParams() {
+  const q = $("#paramFilter").value.trim().toLowerCase();
+  const rows = params.filter(p => !q || (p.name + " " + p.value).toLowerCase().includes(q));
+  $("#paramBody").innerHTML = rows.length
+    ? rows.map(p => `<tr><td>${esc(p.name)}</td><td><b>${esc(p.value)}</b></td><td class="mono">${esc(p.rawHex)}</td></tr>`).join("")
+    : `<tr><td colspan="3" class="muted">${params.length ? "ไม่พบรายการ" : "ยังไม่ได้อ่าน"}</td></tr>`;
+}
+$("#paramFilter").addEventListener("input", renderParams);
+$("#btnParams").onclick = e => busy(e.currentTarget, async () => {
+  try { params = await api("params", { id: sel().id }); renderParams(); toast("good", `อ่านค่าเครื่องได้ ${params.length} รายการ`); }
+  catch (err) { toast("bad", "อ่านค่าเครื่องไม่สำเร็จ", err.message, 6000); }
+});
+$("#btnUsb").onclick = e => busy(e.currentTarget, async () => {
+  try {
+    const files = await api("files", { id: sel().id, usb: true });
+    $("#usbList").innerHTML = files.length ? files.map(f => `<div>${esc(f)}</div>`).join("") : `<p class="sub">ไม่มีไฟล์</p>`;
+  } catch (err) { $("#usbList").innerHTML = `<p class="sub" style="color:var(--bad)">${esc(err.message)}</p>`; }
+});
+
+/* =====================================================================
+   HEX
+   ===================================================================== */
+const RAW_EXAMPLES = [["01 3A", "อ่านสถานะ"], ["01 33", "แม่แบบที่ใช้อยู่"], ["01 41", "รายชื่อแม่แบบ"], ["01 47", "อ่านเวลา"], ["01 40", "ค่าเครื่อง"]];
+$("#rawExamples").innerHTML = RAW_EXAMPLES.map(([h, t]) => `<button class="tchip" data-hex="${h}" type="button">${h} · ${t}</button>`).join("");
+$("#rawExamples").addEventListener("click", e => {
+  const b = e.target.closest("[data-hex]");
+  if (b) { $("#rawHex").value = b.dataset.hex; $("#rawAuto").checked = true; }
+});
+$("#btnRaw").onclick = e => busy(e.currentTarget, async () => {
+  try {
+    const r = await api("raw", { id: sel().id, hex: $("#rawHex").value, autoHeader: $("#rawAuto").checked, wait: $("#rawWait").checked });
+    $("#rawReply").innerHTML = `<b>ส่ง</b>\n${esc(r.sent)}\n\n` + (r.reply ? `<b>ตอบ</b>\n${esc(r.reply)}\n\n<b>แปล</b>\n${esc(r.meaning)}` : "(ไม่รอคำตอบ)");
+  } catch (err) { $("#rawReply").innerHTML = `<b style="color:var(--bad)">ผิดพลาด</b>\n${esc(err.message)}`; }
+});
+
+/* =====================================================================
+   เพิ่ม / แก้ไข / ลบเครื่อง
+   ===================================================================== */
+function closeModal() { $("#modalRoot").innerHTML = ""; }
+function modal(html, onMount) {
+  $("#modalRoot").innerHTML = `<div class="backdrop">${html}</div>`;
+  const root = $("#modalRoot .backdrop");
+  root.addEventListener("mousedown", e => { if (e.target === root) closeModal(); });
+  onMount && onMount(root);
+  return root;
+}
+
+function confirmBox({ title, message, ok = "ตกลง", tone = "" }) {
+  return new Promise(resolve => {
+    modal(`<div class="modal" role="dialog" aria-modal="true">
+      <h3>${esc(title)}</h3><p class="sub" style="font-size:14.5px;margin-top:8px">${esc(message)}</p>
+      <div class="foot"><button class="btn" data-no type="button">ยกเลิก</button><button class="btn ${tone === "danger" ? "danger solid" : "primary"}" data-yes type="button">${esc(ok)}</button></div></div>`, root => {
+      const done = v => { closeModal(); resolve(v); };
+      root.querySelector("[data-yes]").onclick = () => done(true);
+      root.querySelector("[data-no]").onclick = () => done(false);
+      root.addEventListener("keydown", e => { if (e.key === "Escape") done(false); });
+      root.addEventListener("mousedown", e => { if (e.target === root) resolve(false); });
+      root.querySelector("[data-yes]").focus();
+    });
+  });
+}
+
+async function openPrinterModal(p) {
+  const isNew = !p;
+  const n = S.printers.length + 1;
+  const v = p || { name: "เครื่อง " + n, kind: "tcp", host: "192.168.1." + Math.min(254, 10 + n), port: 5000, comPort: "", baudRate: 19200, station: 1 };
+  let ports = [];
+  try { ports = await api("comports"); } catch {}
+  modal(`<form class="modal" role="dialog" aria-modal="true" autocomplete="off">
+    <h3>${isNew ? "เพิ่มเครื่องพิมพ์" : "แก้ไขเครื่องพิมพ์"}</h3>
+    <p class="sub">ตั้ง IP ที่หน้าจอเครื่องพิมพ์ให้ไม่ซ้ำกันทุกเครื่องก่อน</p>
+    <div class="form">
+      <div class="full"><label class="label">ชื่อเครื่อง</label><input class="field" name="pname" value="${esc(v.name)}" required></div>
+      <div class="full"><label class="label">การเชื่อมต่อ</label>
+        <nav class="seg small glass" id="kindSeg" style="display:inline-flex"><span class="seg-pill"></span>
+          <button type="button" data-k="tcp">${icon("lan", 'width="15" height="15"')}LAN (TCP/IP)</button>
+          <button type="button" data-k="serial">${icon("serial", 'width="15" height="15"')}RS232 (COM)</button></nav></div>
+      <div data-tcp><label class="label">IP address</label><input class="field mono" name="host" value="${esc(v.host)}" placeholder="192.168.1.11"></div>
+      <div data-tcp><label class="label">Port</label><input class="field mono" name="port" value="${v.port}" inputmode="numeric"></div>
+      <div data-serial><label class="label">COM port</label>
+        <input class="field mono" name="comPort" value="${esc(v.comPort || ports[0] || "COM1")}" list="comList"><datalist id="comList">${ports.map(c => `<option value="${esc(c)}">`).join("")}</datalist></div>
+      <div data-serial><label class="label">Baud rate</label>
+        <select class="field" name="baudRate">${[9600, 19200, 38400, 115200].map(b => `<option ${b === v.baudRate ? "selected" : ""}>${b}</option>`).join("")}</select></div>
+      <div><label class="label">เลขเครื่อง (ST)</label><input class="field mono" name="station" value="${v.station}" inputmode="numeric"></div>
+    </div>
+    <div class="tips">
+      • ค่าจากโรงงาน <b>192.168.1.2</b> port <b>5000</b> — ทุกเครื่องต้องตั้ง IP ไม่ซ้ำกัน และคอมต้องอยู่วงแลนเดียวกัน<br>
+      • ST ต้องตรงกับเลขในเครื่อง (ตัวอย่างในเอกสารใช้ <b>1</b>) ถ้าเครื่องตอบ error 10 แปลว่าไม่ตรง · ST <b>0</b> = ทุกเครื่อง
+    </div>
+    <div class="foot"><button class="btn" type="button" data-cancel>ยกเลิก</button><button class="btn primary" type="submit"><span class="spin"></span><i class="ico">${icon("check")}</i>บันทึก</button></div>
+  </form>`, root => {
+    let kind = v.kind === "serial" ? "serial" : "tcp";
+    const seg = root.querySelector("#kindSeg");
+    const setKind = k => {
+      kind = k;
+      seg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.k === k));
+      root.querySelectorAll("[data-tcp]").forEach(el => el.style.display = k === "tcp" ? "" : "none");
+      root.querySelectorAll("[data-serial]").forEach(el => el.style.display = k === "serial" ? "" : "none");
+      requestAnimationFrame(() => movePill(seg));
+    };
+    seg.addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) setKind(b.dataset.k); });
+    setKind(kind);
+    root.querySelector("[data-cancel]").onclick = closeModal;
+    root.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+    const form = root.querySelector("form"), f = form.elements;
+    f.pname.focus(); f.pname.select();
+    form.onsubmit = ev => {
+      ev.preventDefault();
+      const btn = form.querySelector("[type=submit]");
+      busy(btn, async () => {
+        try {
+          const dto = await api("printers/save", {
+            id: p ? p.id : null, name: f.pname.value, kind, host: f.host.value, port: +f.port.value,
+            comPort: f.comPort.value, baudRate: +f.baudRate.value, station: +f.station.value,
+          });
+          upsertPrinter(dto, !isNew);
+          closeModal();
+          if (isNew) { S.selId = dto.id; store.set("sel", dto.id); renderAll(); } else renderHero();
+          toast("good", isNew ? "เพิ่มเครื่องแล้ว" : "บันทึกแล้ว", dto.name + " · " + dto.address);
+        } catch (err) { toast("bad", "บันทึกไม่สำเร็จ", err.message, 6000); }
+      });
+    };
+  });
+}
+$("#btnAddPrinter").onclick = () => openPrinterModal(null);
+
+async function deletePrinter(p) {
+  if (!(await confirmBox({ title: "ลบเครื่องพิมพ์", message: `ลบ "${p.name}" (${p.address}) ออกจากรายการ?`, ok: "ลบ", tone: "danger" }))) return;
+  try {
+    await api("printers/delete", { id: p.id });
+    removePrinter(p.id);
+    toast("good", "ลบแล้ว", p.name);
+  } catch (e) { toast("bad", "ลบไม่สำเร็จ", e.message); }
+}
+function removePrinter(id) {
+  S.printers = S.printers.filter(x => x.id !== id);
+  delete S.status[id];
+  if (S.selId === id) S.selId = S.printers[0]?.id || null;
+  renderAll();
+}
+
+/* =====================================================================
+   กิจกรรม (log)
+   ===================================================================== */
+const KIND_ICON = { tx: "arrowUp", rx: "arrowDown", error: "alert", info: "dotIcon" };
+function logRow(l) {
+  return `<div class="arow k-${l.kind}"><span class="t">${esc(l.time)}</span><span class="w">${esc(l.printer)}</span><span class="d">${icon(KIND_ICON[l.kind] || "dotIcon")}</span><span class="x" title="${esc(l.text)}">${esc(l.text)}</span><span class="h" title="${esc(l.hex)}">${esc(l.hex)}</span></div>`;
+}
+const passFilter = l => S.filter === "all" || l.kind === S.filter;
+function renderLog() {
+  const rows = S.logs.filter(passFilter).slice(-400);
+  const list = $("#actList");
+  list.innerHTML = rows.map(logRow).join("");
+  list.scrollTop = list.scrollHeight;
+  $("#actCount").textContent = S.logs.length;
+}
+function addLog(l) {
+  S.logs.push(l);
+  if (S.logs.length > 1000) S.logs.splice(0, S.logs.length - 1000);
+  $("#actCount").textContent = S.logs.length;
+  $("#actLast").innerHTML = `<span style="color:var(--faint)">${esc(l.time)}</span> · ${esc(l.printer)} · ${esc(l.text)}`;
+  if (!passFilter(l)) return;
+  const list = $("#actList");
+  const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
+  list.insertAdjacentHTML("beforeend", logRow(l));
+  while (list.children.length > 400) list.firstChild.remove();
+  if (atBottom) list.scrollTop = list.scrollHeight;
+}
+$("#actToggle").onclick = () => {
+  const c = !$("#app").classList.contains("act-collapsed");
+  $("#app").classList.toggle("act-collapsed", c);
+  store.set("actCollapsed", c);
+  setTimeout(() => movePill($("#actFilter")), 360);
+};
+// ค่าเริ่มต้นย่อไว้ ให้พื้นที่หน้าจอกับงานหลัก (บรรทัดล่าสุดยังแสดงอยู่)
+$("#app").classList.toggle("act-collapsed", store.get("actCollapsed", true));
+$("#actFilter").addEventListener("click", e => {
+  const b = e.target.closest("button[data-f]");
+  if (!b) return;
+  S.filter = b.dataset.f;
+  store.set("actFilter", S.filter);
+  $$("#actFilter button").forEach(x => x.classList.toggle("active", x === b));
+  movePill($("#actFilter"));
+  renderLog();
+});
+$("#actHex").onchange = e => { $("#activity").classList.toggle("no-hex", !e.target.checked); store.set("actHex", e.target.checked); };
+$("#actHex").checked = store.get("actHex", true);
+$("#activity").classList.toggle("no-hex", !$("#actHex").checked);
+$("#actStatus").onchange = e => api("settings", { showStatusFrames: e.target.checked }).catch(() => {});
+$("#actClear").onclick = () => { S.logs = []; renderLog(); $("#actLast").textContent = ""; api("logs/clear", {}).catch(() => {}); };
+$("#actFolder").onclick = () => api("logs/open", {}).catch(e => toast("bad", "เปิดโฟลเดอร์ไม่ได้", e.message));
+$("#actCopy").onclick = async () => {
+  const text = S.logs.filter(passFilter).map(l => [l.time, l.printer, l.kind, l.text, l.hex].join("\t")).join("\n");
+  try { await navigator.clipboard.writeText(text); toast("good", "คัดลอกแล้ว", `${S.logs.filter(passFilter).length} บรรทัด`); }
+  catch { toast("bad", "คัดลอกไม่ได้"); }
+};
+
+/* =====================================================================
+   Command palette (Ctrl+K)
+   ===================================================================== */
+function commands() {
+  const list = [];
+  S.printers.forEach(p => list.push({ icon: "printer", t: "เลือก " + p.name, g: p.address, run: () => selectPrinter(p.id) }));
+  [["send", "send", "ไปที่ ส่งข้อมูล"], ["status", "activity", "ไปที่ สถานะ"], ["control", "sliders", "ไปที่ ควบคุม"], ["info", "chip", "ไปที่ ข้อมูลเครื่อง"], ["hex", "code", "ไปที่ HEX"]]
+    .forEach(([v, i, t]) => list.push({ icon: i, t, g: "หน้า", run: () => setView(v) }));
+  if (sel()) {
+    list.push({ icon: "send", t: "ส่งไปเครื่องพิมพ์", g: "Ctrl+Enter", run: () => { setView("send"); doSend(); } });
+    list.push({ icon: "refresh", t: "อ่านสถานะ", g: sel().name, run: () => { setView("status"); readStatus($("#btnReadStatus")); } });
+    list.push({ icon: "download", t: "ดึงแม่แบบ + ตัวแปรจากเครื่อง", g: sel().name, run: () => { setView("send"); $("#btnFromDevice").click(); } });
+    list.push({ icon: "plug", t: "เชื่อมต่อ", g: sel().name, run: () => connectPrinter(null) });
+  }
+  list.push({ icon: "plus", t: "เพิ่มเครื่องพิมพ์", g: "", run: () => openPrinterModal(null) });
+  list.push({ icon: "moon", t: "สลับธีมสว่าง/มืด", g: "", run: () => $("#btnTheme").click() });
+  list.push({ icon: "folder", t: "เปิดโฟลเดอร์ log", g: "", run: () => $("#actFolder").click() });
+  return list;
+}
+function openPalette() {
+  const all = commands();
+  let items = all, idx = 0;
+  modal(`<div class="palette" role="dialog" aria-modal="true"><div class="pin">${icon("search")}<input id="palIn" placeholder="พิมพ์เพื่อค้นหาเครื่องพิมพ์หรือคำสั่ง…" autocomplete="off"><kbd>Esc</kbd></div><div class="plist" id="palList"></div></div>`, root => {
+    const input = root.querySelector("#palIn"), listEl = root.querySelector("#palList");
+    const draw = () => {
+      listEl.innerHTML = items.map((c, i) => `<div class="pitem ${i === idx ? "sel" : ""}" data-i="${i}">${icon(c.icon)}<span>${esc(c.t)}</span><span class="pg">${esc(c.g)}</span></div>`).join("") || `<div class="pitem">ไม่พบคำสั่ง</div>`;
+      listEl.querySelector(".sel")?.scrollIntoView({ block: "nearest" });
+    };
+    const run = i => { const c = items[i]; if (!c) return; closeModal(); c.run(); };
+    input.addEventListener("input", () => {
+      const q = input.value.trim().toLowerCase();
+      items = all.filter(c => (c.t + " " + c.g).toLowerCase().includes(q));
+      idx = 0; draw();
+    });
+    input.addEventListener("keydown", e => {
+      if (e.key === "ArrowDown") { idx = Math.min(items.length - 1, idx + 1); draw(); e.preventDefault(); }
+      else if (e.key === "ArrowUp") { idx = Math.max(0, idx - 1); draw(); e.preventDefault(); }
+      else if (e.key === "Enter") { run(idx); e.preventDefault(); }
+      else if (e.key === "Escape") closeModal();
+    });
+    listEl.addEventListener("click", e => { const it = e.target.closest("[data-i]"); if (it) run(+it.dataset.i); });
+    draw();
+    input.focus();
+  });
+}
+$("#btnPalette").onclick = openPalette;
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); }
+  else if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && S.view === "send" && !$("#modalRoot").children.length) { e.preventDefault(); doSend(); }
+  else if (e.altKey && /^[1-5]$/.test(e.key)) { setView(["send", "status", "control", "info", "hex"][+e.key - 1]); }
+});
+
+/* =====================================================================
+   เชื่อมต่อกับโปรแกรมหลัก (event สด)
+   ===================================================================== */
+function setOnline(on) {
+  S.online = on;
+  $("#linkState").innerHTML = on ? `<span class="dot good"></span>พร้อม` : `<span class="dot bad"></span>ขาดการเชื่อมต่อ`;
+  let b = $("#offlineBanner");
+  if (!on && !b) { document.body.insertAdjacentHTML("beforeend", `<div class="banner" id="offlineBanner">ติดต่อโปรแกรมหลักไม่ได้ — กำลังลองใหม่…</div>`); }
+  if (on && b) b.remove();
+}
+function connectEvents() {
+  const es = new EventSource("/api/events?t=" + encodeURIComponent(TOKEN));
+  let wasOffline = false;
+  es.onopen = () => { if (wasOffline) refreshState(); wasOffline = false; setOnline(true); };
+  es.onerror = () => { wasOffline = true; setOnline(false); };
+  es.addEventListener("log", e => addLog(JSON.parse(e.data)));
+  es.addEventListener("printer", e => upsertPrinter(JSON.parse(e.data)));
+  es.addEventListener("printerRemoved", e => removePrinter(JSON.parse(e.data).id));
+  es.addEventListener("status", e => {
+    const { id, status } = JSON.parse(e.data);
+    S.status[id] = status;
+    if (id === S.selId) renderStatus(status);
+    renderRail();
+  });
+  es.addEventListener("printDone", e => {
+    const { id, waited, time } = JSON.parse(e.data);
+    const p = S.printers.find(x => x.id === id);
+    if (waited) {
+      S.results[id] = { tone: "good", title: "พิมพ์เสร็จแล้ว", sub: time + " · ส่งชุดถัดไปได้" };
+      if (id === S.selId) setResult($("#sendResult"), "good", "พิมพ์เสร็จแล้ว", time + " · ส่งชุดถัดไปได้");
+    }
+    if (p && id !== S.selId) toast("good", "พิมพ์เสร็จ", p.name, 2500);
+  });
+}
+
+async function refreshState() {
+  const st = await api("state");
+  S.printers = st.printers;
+  S.settings = st.settings;
+  S.limits = st.limits;
+  S.logs = st.log;
+  $("#ver").textContent = "v" + st.version;
+  $("#actStatus").checked = !!st.settings.showStatusFrames;
+  $("#autoSec").value = String([2, 5, 10, 30, 60].includes(st.settings.autoStatusSeconds) ? st.settings.autoStatusSeconds : 5);
+  if (!S.printers.some(p => p.id === S.selId)) S.selId = S.printers[0]?.id || null;
+  renderAll();
+}
+
+function renderAll() {
+  renderRail();
+  selectPrinter(S.selId);
+  setView(S.view);
+  renderLog();
+  const has = S.printers.length > 0;
+  $("#nav").classList.toggle("hidden", !has);
+  $(".views").classList.toggle("hidden", !has);
+  let w = $("#welcome");
+  if (!has && !w) {
+    $("#main").insertAdjacentHTML("beforeend", `<div class="card glass welcome" id="welcome"><div><div class="logo" style="margin:0 auto 18px">${icon("printer")}</div><h2>เริ่มต้นใช้งาน</h2><p class="sub" style="font-size:15px;margin-bottom:22px">เพิ่มเครื่องพิมพ์เครื่องแรก ด้วย IP ที่ตั้งไว้ที่หน้าจอเครื่อง</p><button class="btn primary xl" type="button" onclick="openPrinterModal(null)">${icon("plus")}เพิ่มเครื่องพิมพ์</button></div></div>`);
+  } else if (has && w) w.remove();
+  $$("#actFilter button").forEach(x => x.classList.toggle("active", x.dataset.f === S.filter));
+  requestAnimationFrame(() => { movePill($("#nav")); movePill($("#actFilter")); });
+}
+
+window.addEventListener("resize", () => { movePill($("#nav")); movePill($("#actFilter")); });
+window.addEventListener("beforeunload", flushDraft);
+
+hydrateIcons();
+refreshState().then(connectEvents).catch(e => {
+  document.body.insertAdjacentHTML("beforeend", `<div class="banner">${esc(e.message)}</div>`);
+});
+</script>
+</body>
+</html>
