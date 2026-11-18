@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- net48 = exe สำหรับ Windows (มีในเครื่องอยู่แล้ว), net8.0 = ใช้รันเทสต์บน Linux/CI -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Dikai.Simulator</RootNamespace>
+    <AssemblyName>PrinterSimulator</AssemblyName>
+    <Version>1.0.0</Version>
+    <Product>Dikai DGCP Printer Simulator</Product>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\Protocol\*.cs" Link="Protocol\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

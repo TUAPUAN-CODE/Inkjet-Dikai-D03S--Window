@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+# ไฟล์ที่โปรแกรมสร้างตอนรัน
+DikaiD03S.settings.json*
+logs/
