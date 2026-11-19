@@ -12,6 +12,9 @@
   <ItemGroup>
     <Compile Include="..\..\src\Protocol\*.cs" Link="Protocol\%(Filename)%(Extension)" />
     <Compile Include="..\..\tools\PrinterSimulator\SimulatedPrinter.cs" Link="Simulator\SimulatedPrinter.cs" />
+    <!-- รหัสผ่านผู้ดูแลของโปรแกรม (ไม่มี UI/เน็ตเวิร์ก จึงเทสต์ตรงๆ ได้) -->
+    <Compile Include="..\..\src\DikaiD03S\AdminLock.cs" Link="App\AdminLock.cs" />
+    <Compile Include="..\..\src\DikaiD03S\AppSettings.cs" Link="App\AppSettings.cs" />
   </ItemGroup>
 
 </Project>

@@ -20,6 +20,7 @@ namespace Dikai.App
         private const int LogBuffer = 400;
 
         private readonly AppSettings _settings;
+        private readonly AdminLock _admin;
         private readonly object _gate = new object();
         private readonly List<PrinterSession> _sessions = new List<PrinterSession>();
         private readonly HashSet<PrinterSession> _awaitingPrintDone = new HashSet<PrinterSession>();
@@ -39,6 +40,7 @@ namespace Dikai.App
         public AppController(AppSettings settings, string startupWarning)
         {
             _settings = settings;
+            _admin = new AdminLock(settings);
             foreach (var p in settings.Printers) AddSession(p);
             if (startupWarning != null) AddLog(new LogEntry { Printer = "-", Kind = LogKind.Error, Text = startupWarning }, null);
             AddLog(new LogEntry { Printer = "-", Kind = LogKind.Info, Text = "เริ่มโปรแกรม — log อยู่ที่ " + AppSettings.LogDirectory }, null);
@@ -56,11 +58,67 @@ namespace Dikai.App
 
         // ================================================================== API
 
-        public async Task<object> HandleApi(string route, JObj b)
+        /// <summary>
+        /// หน้า ควบคุม / ข้อมูลเครื่อง / HEX ต้องใส่รหัสผ่านผู้ดูแลก่อน — ตรวจที่ฝั่งโปรแกรม ไม่ใช่แค่ซ่อนปุ่มในหน้าจอ
+        /// (การส่งข้อมูลปกติและการอ่านสถานะไม่ต้องใช้รหัส)
+        /// </summary>
+        private static bool NeedsAdmin(string route, JObj b)
         {
             switch (route)
             {
+                case "control":
+                case "time/get":
+                case "time/set":
+                case "params":
+                case "raw":
+                    return true;
+                case "files":
+                    return b.Bool("usb");
+                default:
+                    return false;
+            }
+        }
+
+        private object AdminDto()
+        {
+            return new Dictionary<string, object>
+            {
+                { "unlocked", _admin.IsUnlocked },
+                { "remaining", _admin.RemainingSeconds },
+                { "isDefault", _admin.IsDefaultPassword },
+                { "idleSeconds", (int)AdminLock.IdleTimeout.TotalSeconds },
+            };
+        }
+
+        public async Task<object> HandleApi(string route, JObj b)
+        {
+            if (NeedsAdmin(route, b)) _admin.Require();
+            switch (route)
+            {
                 case "state": return State();
+                case "admin/unlock":
+                {
+                    if (!await _admin.UnlockAsync(b.Str("password")).ConfigureAwait(false))
+                    {
+                        AddLog(new LogEntry { Printer = "-", Kind = LogKind.Error, Text = "ใส่รหัสผ่านผู้ดูแลผิด" }, null);
+                        throw new ArgumentException("รหัสผ่านไม่ถูกต้อง");
+                    }
+                    AddLog(new LogEntry { Printer = "-", Kind = LogKind.Info, Text = "ปลดล็อกหน้าผู้ดูแลแล้ว" }, null);
+                    return AdminDto();
+                }
+                case "admin/lock":
+                    _admin.Lock();
+                    return AdminDto();
+                case "admin/touch":
+                    _admin.Touch();
+                    return AdminDto();
+                case "admin/password":
+                {
+                    await _admin.ChangePasswordAsync(b.Str("current"), b.Str("next")).ConfigureAwait(false);
+                    Save();
+                    AddLog(new LogEntry { Printer = "-", Kind = LogKind.Info, Text = "เปลี่ยนรหัสผ่านผู้ดูแลแล้ว" }, null);
+                    return AdminDto();
+                }
                 case "comports": return ComPorts();
                 case "settings": return SaveAppSettings(b);
                 case "logs/open": return OpenLogFolder();
@@ -174,6 +232,7 @@ namespace Dikai.App
             return new Dictionary<string, object>
             {
                 { "version", Version },
+                { "admin", AdminDto() },
                 { "printers", printers },
                 { "log", log },
                 {

@@ -122,7 +122,7 @@ namespace Dikai.App
                         await WriteJsonAsync(stream, 401, new Dictionary<string, object> { { "ok", false }, { "error", "unauthorized" } }).ConfigureAwait(false);
                         return;
                     }
-                    object result;
+                    Dictionary<string, object> result;
                     try
                     {
                         var body = req.Body.Length > 0 ? Json.Parse(Utf8.GetString(req.Body)) : null;
@@ -131,8 +131,9 @@ namespace Dikai.App
                     }
                     catch (Exception ex)
                     {
-                        var msg = ex is Dgcp.DgcpException || ex is ArgumentException || ex is FormatException ? ex.Message : ex.GetType().Name + ": " + ex.Message;
+                        var msg = ex is Dgcp.DgcpException || ex is ArgumentException || ex is FormatException || ex is AdminLockedException ? ex.Message : ex.GetType().Name + ": " + ex.Message;
                         result = new Dictionary<string, object> { { "ok", false }, { "error", msg } };
+                        if (ex is AdminLockedException) result["code"] = "locked"; // หน้าจอใช้รหัสนี้เด้งกลับไปหน้าล็อก
                     }
                     await WriteJsonAsync(stream, 200, result).ConfigureAwait(false);
                     return;

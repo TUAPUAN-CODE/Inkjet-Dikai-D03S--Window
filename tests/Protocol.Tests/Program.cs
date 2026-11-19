@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Dikai.App;
 using Dikai.Dgcp;
 using Dikai.Simulator;
 
@@ -31,6 +32,9 @@ internal static class Program
         await RunAsync("รายงานสถานะ 3Fh ที่เครื่องส่งเอง", StatusPush);
         await RunAsync("หมดเวลา เมื่อเครื่องไม่ตอบ", Timeout);
         await RunAsync("ตรวจจับการเชื่อมต่อหลุด", ConnectionDrop);
+        await RunAsync("รหัสผ่านผู้ดูแล: รหัสเริ่มต้น / ผิด / ล็อกซ้ำ", AdminUnlock);
+        await RunAsync("รหัสผ่านผู้ดูแล: ล็อกเองเมื่อไม่ได้ใช้งาน + ต่อเวลาเมื่อใช้งาน", AdminIdle);
+        await RunAsync("รหัสผ่านผู้ดูแล: เปลี่ยนรหัส / เก็บแบบ hash / ใช้ต่อหลังเปิดโปรแกรมใหม่", AdminChangePassword);
 
         Console.WriteLine();
         Console.WriteLine("ผ่าน " + _passed + " / ไม่ผ่าน " + _failed);
@@ -38,6 +42,82 @@ internal static class Program
     }
 
     // ---------------------------------------------------------------- unit
+
+    // ---------------------------------------------------------------- รหัสผ่านผู้ดูแล
+
+    private static async Task AdminUnlock()
+    {
+        var lk = new AdminLock(new AppSettings());
+        Equal(true, lk.IsDefaultPassword, "ยังไม่เคยตั้งรหัส = ใช้รหัสเริ่มต้น");
+        Equal(false, lk.IsUnlocked, "เริ่มต้นต้องล็อกอยู่");
+        Throws<AdminLockedException>(() => lk.Require(), "ล็อกอยู่ต้องห้ามเรียกคำสั่งผู้ดูแล");
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        Equal(false, await lk.UnlockAsync("0000"), "รหัสผิด");
+        Equal(false, await lk.UnlockAsync(null), "รหัสว่าง");
+        if (sw.ElapsedMilliseconds < 800) throw new Exception("รหัสผิดต้องหน่วงเวลาก่อนตอบ (กันเดารหัส) แต่ตอบใน " + sw.ElapsedMilliseconds + " ms");
+        Equal(false, lk.IsUnlocked, "รหัสผิดห้ามปลดล็อก");
+
+        Equal(true, await lk.UnlockAsync(AdminLock.DefaultPassword), "รหัสเริ่มต้น");
+        Equal(true, lk.IsUnlocked, "ปลดล็อกแล้ว");
+        lk.Require();
+        if (lk.RemainingSeconds < 590 || lk.RemainingSeconds > 600) throw new Exception("เวลาที่เหลือผิด: " + lk.RemainingSeconds);
+
+        lk.Lock();
+        Equal(false, lk.IsUnlocked, "Lock()");
+        Throws<AdminLockedException>(() => lk.Require(), "ล็อกแล้วต้องห้ามอีก");
+    }
+
+    private static async Task AdminIdle()
+    {
+        var lk = new AdminLock(new AppSettings(), TimeSpan.FromMilliseconds(500));
+        await lk.UnlockAsync(AdminLock.DefaultPassword);
+        await Task.Delay(300);
+        lk.Require(); // ใช้งานอยู่ → ต่อเวลา
+        await Task.Delay(300);
+        Equal(true, lk.IsUnlocked, "ใช้งานต่อเนื่องต้องไม่ล็อก");
+        lk.Touch();
+        await Task.Delay(300);
+        Equal(true, lk.IsUnlocked, "Touch ต่อเวลา");
+        await Task.Delay(400);
+        Equal(false, lk.IsUnlocked, "ไม่ได้ใช้งานเกินเวลาต้องล็อกเอง");
+        Throws<AdminLockedException>(() => lk.Require(), "หมดเวลาแล้วต้องห้าม");
+        lk.Touch(); // ล็อกไปแล้ว Touch ต้องไม่ปลดล็อกให้
+        Equal(false, lk.IsUnlocked, "Touch ห้ามปลดล็อก");
+    }
+
+    private static async Task AdminChangePassword()
+    {
+        var settings = new AppSettings();
+        var lk = new AdminLock(settings);
+        await ThrowsAsync<AdminLockedException>(() => lk.ChangePasswordAsync("1234", "abcd"), "ยังล็อกอยู่ห้ามเปลี่ยนรหัส");
+        await lk.UnlockAsync("1234");
+
+        await ThrowsAsync<ArgumentException>(() => lk.ChangePasswordAsync("ผิด", "abcd"), "รหัสปัจจุบันผิด");
+        await ThrowsAsync<ArgumentException>(() => lk.ChangePasswordAsync("1234", "abc"), "รหัสใหม่สั้นเกิน");
+        Equal(true, lk.IsDefaultPassword, "เปลี่ยนไม่สำเร็จต้องยังเป็นรหัสเดิม");
+
+        await lk.ChangePasswordAsync("1234", "รหัสใหม่-9");
+        Equal(false, lk.IsDefaultPassword, "เปลี่ยนแล้ว");
+        var stored = settings.AdminPassword;
+        if (stored == null || !stored.StartsWith("pbkdf2-sha256$") || stored.Contains("รหัสใหม่")) throw new Exception("ต้องเก็บเป็น hash ไม่ใช่ข้อความรหัสผ่าน: " + stored);
+
+        // บันทึกลงไฟล์ตั้งค่าแล้วอ่านกลับ (เหมือนปิด-เปิดโปรแกรม)
+        var ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(AppSettings));
+        var ms = new System.IO.MemoryStream();
+        ser.WriteObject(ms, settings);
+        ms.Position = 0;
+        var reloaded = (AppSettings)ser.ReadObject(ms);
+        var lk2 = new AdminLock(reloaded);
+        Equal(false, lk2.IsUnlocked, "เปิดโปรแกรมใหม่ต้องล็อกเสมอ");
+        Equal(false, await lk2.UnlockAsync("1234"), "รหัสเก่าต้องใช้ไม่ได้แล้ว");
+        Equal(true, await lk2.UnlockAsync("รหัสใหม่-9"), "รหัสใหม่ใช้ได้");
+
+        // ไฟล์ตั้งค่าเวอร์ชันก่อนหน้า (ไม่มีช่อง AdminPassword) ต้องอ่านได้และใช้รหัสเริ่มต้น
+        var old = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes("{\"Printers\":[],\"TimeoutMs\":3000}"));
+        var legacy = (AppSettings)ser.ReadObject(old);
+        Equal(true, new AdminLock(legacy).IsDefaultPassword, "ไฟล์เก่า = รหัสเริ่มต้น");
+    }
 
     private static void DocExamples()
     {

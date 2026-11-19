@@ -79,6 +79,8 @@ namespace Dikai.App
         [DataMember(Order = 3)] public bool LogToFile { get; set; }
         [DataMember(Order = 4)] public bool ShowStatusFrames { get; set; }
         [DataMember(Order = 5)] public int AutoStatusSeconds { get; set; }
+        /// <summary>รหัสผ่านผู้ดูแล (PBKDF2) — ว่าง = ใช้รหัสเริ่มต้น ดู AdminLock</summary>
+        [DataMember(Order = 6)] public string AdminPassword { get; set; }
 
         public static string BaseDirectory { get; private set; }
         public static string FilePath => Path.Combine(BaseDirectory, "DikaiD03S.settings.json");
