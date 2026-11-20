@@ -350,6 +350,19 @@ namespace Dikai.Dgcp
     }
 
     /// <summary>คำสั่งระดับสูงสำหรับ 1 เครื่อง (ใส่เลขเครื่อง ST ให้อัตโนมัติ)</summary>
+    /// <summary>ผลของ <see cref="DgcpClient.SyncTimeAsync"/></summary>
+    public sealed class TimeSyncResult
+    {
+        /// <summary>เวลาในเครื่องที่อ่านได้ (47h) ก่อนตั้ง</summary>
+        public DateTime DeviceTime { get; set; }
+        /// <summary>เครื่อง − คอมพิวเตอร์ (ค่าลบ = เครื่องช้ากว่า)</summary>
+        public TimeSpan Drift { get; set; }
+        /// <summary>true = คลาดเกินเกณฑ์จึงส่ง 48h ตั้งเวลาแล้ว</summary>
+        public bool Changed { get; set; }
+        /// <summary>ผลต่างหลังตั้ง (อ่านซ้ำด้วย 47h ยืนยัน) ถ้าไม่ได้ตั้งเท่ากับ Drift</summary>
+        public TimeSpan DriftAfter { get; set; }
+    }
+
     public sealed class DgcpClient
     {
         public DgcpConnection Connection { get; }
@@ -442,6 +455,25 @@ namespace Dikai.Dgcp
         public Task SetTimeAsync(DateTime time)
         {
             return Connection.ExecuteAsync(DgcpCommands.SetTime(Station, time));
+        }
+
+        /// <summary>
+        /// ให้เวลาเครื่องตรงกับคอมพิวเตอร์: อ่านเวลาเครื่อง (47h) → ถ้าคลาดตั้งแต่ <paramref name="threshold"/> ขึ้นไปส่ง 48h
+        /// ตั้งเป็นเวลาคอมตอนนี้ แล้วอ่านซ้ำเพื่อยืนยัน (ถ้าคลาดน้อยกว่าเกณฑ์ไม่ส่งอะไร เพื่อไม่แตะเวลาเครื่องโดยไม่จำเป็น)
+        /// </summary>
+        public async Task<TimeSyncResult> SyncTimeAsync(TimeSpan threshold)
+        {
+            var device = await GetTimeAsync().ConfigureAwait(false);
+            if (!device.HasValue) throw new DgcpException("เครื่องตอบเวลามาแต่อ่านค่าไม่ได้");
+            var r = new TimeSyncResult { DeviceTime = device.Value, Drift = device.Value - DateTime.Now };
+            r.DriftAfter = r.Drift;
+            if (r.Drift.Duration() < threshold) return r;
+
+            await SetTimeAsync(DateTime.Now).ConfigureAwait(false);
+            r.Changed = true;
+            var after = await GetTimeAsync().ConfigureAwait(false);
+            if (after.HasValue) r.DriftAfter = after.Value - DateTime.Now;
+            return r;
         }
 
         /// <summary>คำสั่งที่มีแค่ ST + CMD และตอบ 32h เช่น 42h เริ่ม, 43h หยุด, 38h ล้างคิว</summary>

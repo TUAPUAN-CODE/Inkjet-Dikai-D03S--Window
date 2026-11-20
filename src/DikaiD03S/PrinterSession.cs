@@ -47,6 +47,10 @@ namespace Dikai.App
         public DeviceStatus LastStatus { get; set; }
         /// <summary>เครื่องนี้ไม่รับตัวแปรใน 34h (เรียนรู้จากการส่งครั้งแรกที่ error 6) — ดู DgcpClient.PreferTwoStepSelect</summary>
         public bool TwoStepSelect { get; set; }
+        /// <summary>การเชื่อมต่อ (DgcpClient) ที่ตรวจ/ตั้งเวลาล่าสุด — เปลี่ยนเมื่อต่อใหม่ จึงรู้ว่าต้องตรวจอีกครั้งทันที</summary>
+        public DgcpClient TimeSyncedClient { get; set; }
+        public DateTime NextTimeSyncUtc { get; set; }
+        public int TimeSyncRunning;
         public int TimeoutMs { get; set; } = 3000;
 
         /// <summary>&gt; 0 ระหว่างอ่านสถานะอัตโนมัติ — แพ็กเก็ต 3Ah ช่วงนั้นถูกซ่อนจาก log (ที่ผู้ใช้กดเองยังแสดง)</summary>

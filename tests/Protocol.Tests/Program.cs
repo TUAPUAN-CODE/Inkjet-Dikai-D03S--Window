@@ -36,6 +36,8 @@ internal static class Program
         await RunAsync("เลือกแม่แบบ+ค่า: เครื่องที่ 34h ไม่รับตัวแปร (error 6) → 34h แล้ว 35h", SelectTwoStep);
         await RunAsync("เลือกแม่แบบที่ไม่มีจริง → ยัง error 6 (ไม่ถูกกลืนโดยการลองใหม่)", SelectMissingTemplate);
         Run("ฟอนต์ (แม่แบบที่ผูกไว้): เก็บในไฟล์ตั้งค่า + ไฟล์เก่าไม่มีช่องนี้ก็อ่านได้", FontSettings);
+        await RunAsync("ตั้งเวลาเครื่องตามคอม: เครื่องช้า 74 วินาที (แบบเครื่องจริง) → ตั้งแล้วตรง", TimeSyncBehind);
+        await RunAsync("ตั้งเวลาเครื่องตามคอม: เร็วกว่า / คลาดไม่ถึงเกณฑ์ไม่แตะเวลาเครื่อง", TimeSyncAheadAndWithinThreshold);
         await RunAsync("รหัสผ่านผู้ดูแล: รหัสเริ่มต้น / ผิด / ล็อกซ้ำ", AdminUnlock);
         await RunAsync("รหัสผ่านผู้ดูแล: ล็อกเองเมื่อไม่ได้ใช้งาน + ต่อเวลาเมื่อใช้งาน", AdminIdle);
         await RunAsync("รหัสผ่านผู้ดูแล: เปลี่ยนรหัส / เก็บแบบ hash / ใช้ต่อหลังเปิดโปรแกรมใหม่", AdminChangePassword);
@@ -102,6 +104,47 @@ internal static class Program
             await Task.Delay(50);
         }
         Equal(expected, sim.CurrentValue(name), "ค่า " + name);
+    }
+
+    private static async Task TimeSyncBehind()
+    {
+        using (var sim = StartSim(clockOffsetSeconds: -74))
+        using (var conn = await DgcpConnection.ConnectTcpAsync("127.0.0.1", sim.Port, 2000))
+        {
+            var c = new DgcpClient(conn, 1);
+            var r = await c.SyncTimeAsync(TimeSpan.FromSeconds(3));
+            Equal(true, r.Changed, "ส่ง 48h ตั้งเวลา");
+            if (Math.Abs(r.Drift.TotalSeconds + 74) > 3) throw new Exception("ควรอ่านได้ว่าช้า ~74 วินาที แต่ได้ " + r.Drift.TotalSeconds);
+            if (r.DriftAfter.Duration() > TimeSpan.FromSeconds(3)) throw new Exception("หลังตั้งควรตรง แต่ยังคลาด " + r.DriftAfter.TotalSeconds + " วินาที");
+            // อ่านซ้ำเอง: เวลาเครื่องตรงกับคอมจริง
+            var t = await c.GetTimeAsync();
+            if ((t.Value - DateTime.Now).Duration() > TimeSpan.FromSeconds(3)) throw new Exception("เวลาเครื่องหลังตั้งไม่ตรง: " + t.Value);
+            // ครั้งที่สองไม่ต้องตั้งซ้ำ
+            Equal(false, (await c.SyncTimeAsync(TimeSpan.FromSeconds(3))).Changed, "ตรงแล้วไม่ตั้งซ้ำ");
+        }
+    }
+
+    private static async Task TimeSyncAheadAndWithinThreshold()
+    {
+        using (var sim = StartSim(clockOffsetSeconds: 3600))
+        using (var conn = await DgcpConnection.ConnectTcpAsync("127.0.0.1", sim.Port, 2000))
+        {
+            var c = new DgcpClient(conn, 1);
+            var r = await c.SyncTimeAsync(TimeSpan.FromSeconds(3));
+            Equal(true, r.Changed, "เครื่องเร็วกว่า 1 ชั่วโมงก็ตั้งให้");
+            if (r.Drift < TimeSpan.FromMinutes(59)) throw new Exception("ควรอ่านได้ว่าเร็วกว่า ~1 ชม. แต่ได้ " + r.Drift);
+            if (r.DriftAfter.Duration() > TimeSpan.FromSeconds(3)) throw new Exception("หลังตั้งควรตรง: " + r.DriftAfter);
+        }
+        using (var sim = StartSim(clockOffsetSeconds: -1))
+        using (var conn = await DgcpConnection.ConnectTcpAsync("127.0.0.1", sim.Port, 2000))
+        {
+            var c = new DgcpClient(conn, 1);
+            var r = await c.SyncTimeAsync(TimeSpan.FromSeconds(3));
+            Equal(false, r.Changed, "คลาด 1 วินาที ไม่ถึงเกณฑ์ ต้องไม่ตั้ง");
+            var t = await c.GetTimeAsync();
+            var off = (t.Value - DateTime.Now).TotalSeconds;
+            if (off > -0.2 || off < -3) throw new Exception("เวลาเครื่องต้องยังช้ากว่าคอมเหมือนเดิม (ไม่ถูกแตะ) แต่ต่าง " + off + " วินาที");
+        }
     }
 
     private static async Task SelectMissingTemplate()
@@ -347,7 +390,7 @@ internal static class Program
 
     // ---------------------------------------------------------------- integration
 
-    private static SimulatedPrinter StartSim(int printMs = 0, int extraFiles = 0, int page = 100, int queue = 3, int report = 0, bool rejectVarsInSelect = false)
+    private static SimulatedPrinter StartSim(int printMs = 0, int extraFiles = 0, int page = 100, int queue = 3, int report = 0, bool rejectVarsInSelect = false, int clockOffsetSeconds = 0)
     {
         var sim = new SimulatedPrinter(new SimulatedPrinter.Options
         {
@@ -359,6 +402,7 @@ internal static class Program
             QueueCapacity = queue,
             ReportIntervalSec = report,
             RejectVarsInSelect = rejectVarsInSelect,
+            ClockOffsetSeconds = clockOffsetSeconds,
         });
         sim.Start();
         return sim;

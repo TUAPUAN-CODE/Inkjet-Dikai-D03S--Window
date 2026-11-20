@@ -775,6 +775,12 @@ body.admin-on .var { grid-template-columns: minmax(76px, 128px) minmax(0, 1fr) a
                 <button class="btn sm" id="btnGetTime" type="button"><span class="spin"></span><i class="ico" data-icon="clock"></i>อ่านเวลาเครื่อง</button>
                 <button class="btn sm primary" id="btnSetTime" type="button"><span class="spin"></span><i class="ico" data-icon="refresh"></i>ตั้งตามคอมพิวเตอร์</button>
               </div></div>
+            <div class="divider"></div>
+            <label class="opt-row" style="cursor:pointer">
+              <div><div class="opt-title">ตั้งเวลาเครื่องตามคอมพิวเตอร์อัตโนมัติ</div>
+                <div class="sub">ทุกเครื่องที่เชื่อมต่ออยู่: ตรวจทันทีที่ต่อ แล้วตรวจทุก 30 นาที ตั้งเมื่อคลาดเกิน 3 วินาที (เวลาของคอมต้องถูกต้อง) · บันทึกใน กิจกรรม</div></div>
+              <input type="checkbox" class="switch" id="autoTime">
+            </label>
           </div>
         </div>
       </section>
@@ -1763,6 +1769,18 @@ $("#btnGetTime").onclick = e => busy(e.currentTarget, async () => {
       Math.abs(d) < 2 ? "ตรงกับคอมพิวเตอร์" : `${d > 0 ? "เร็วกว่า" : "ช้ากว่า"}คอมพิวเตอร์ ${Math.abs(d).toLocaleString()} วินาที`);
   } catch (err) { setResult($("#timeResult"), "bad", "อ่านเวลาไม่สำเร็จ", err.message); }
 });
+$("#autoTime").onchange = async e => {
+  const el = e.currentTarget, on = el.checked;
+  if (on && !(await confirmBox({ title: "ตั้งเวลาเครื่องอัตโนมัติ", message: "เปิดให้โปรแกรมส่งเวลาของคอมพิวเตอร์เครื่องนี้ไปตั้งที่เครื่องพิมพ์ทุกเครื่องที่เชื่อมต่อ (ตอนเชื่อมต่อ และตรวจทุก 30 นาที) มีผลกับวันที่/เวลาที่พิมพ์บนสินค้า — เปิดเมื่อมั่นใจว่าเวลาของคอมถูกต้อง", ok: "เปิดใช้งาน" }))) { el.checked = false; return; }
+  try {
+    await api("settings", { autoSyncTime: on });
+    S.settings.autoSyncTime = on;
+    toast("good", on ? "เปิดตั้งเวลาอัตโนมัติแล้ว" : "ปิดตั้งเวลาอัตโนมัติแล้ว", on ? "ดูผลได้ในปุ่ม กิจกรรม" : "", 3000);
+  } catch (err) {
+    el.checked = !on;
+    toast("bad", "บันทึกไม่สำเร็จ", err.message, 6000);
+  }
+};
 $("#btnSetTime").onclick = async e => {
   const btn = e.currentTarget;
   const now = new Date().toLocaleString("sv-SE").replace("T", " ");
@@ -2093,6 +2111,7 @@ async function refreshState() {
   if (st.admin) setAdmin(st.admin);
   $("#ver").textContent = "v" + st.version;
   $("#actStatus").checked = !!st.settings.showStatusFrames;
+  $("#autoTime").checked = !!st.settings.autoSyncTime;
   $("#autoSec").value = String([2, 5, 10, 30, 60].includes(st.settings.autoStatusSeconds) ? st.settings.autoStatusSeconds : 5);
   if (!S.printers.some(p => p.id === S.selId)) S.selId = S.printers[0]?.id || null;
   renderAll();

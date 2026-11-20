@@ -35,6 +35,8 @@ namespace Dikai.Simulator
             public bool BlankFileNames;
             /// <summary>34h ที่มีตัวแปรตอบ error 6 (พบในเครื่องจริง: 34h ไม่มีตัวแปรผ่าน, 35h/49h ผ่าน)</summary>
             public bool RejectVarsInSelect;
+            /// <summary>เวลาในเครื่องจำลองต่างจากคอมกี่วินาที (ลบ = ช้ากว่า) เครื่องจริงของผู้ใช้ช้ากว่าประมาณ 74 วินาที</summary>
+            public int ClockOffsetSeconds;
             public Action<string> Log = s => { };
         }
 
@@ -85,6 +87,7 @@ namespace Dikai.Simulator
             for (int i = 1; i <= 5; i++) AddTemplate(i.ToString(CultureInfo.InvariantCulture));
             for (int i = 1; i <= options.ExtraFiles; i++) AddTemplate("FILE" + i.ToString("000", CultureInfo.InvariantCulture));
             _current = _templates["TEST"];
+            _clockOffset = TimeSpan.FromSeconds(options.ClockOffsetSeconds);
         }
 
         public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;

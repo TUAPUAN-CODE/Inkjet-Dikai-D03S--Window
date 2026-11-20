@@ -30,6 +30,7 @@ namespace Dikai.Simulator
                         case "--report": o.ReportIntervalSec = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                         case "--blank-names": o.BlankFileNames = true; break;
                         case "--reject-vars-in-34h": o.RejectVarsInSelect = true; break;
+                        case "--clock-offset": o.ClockOffsetSeconds = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                         case "-h":
                         case "--help":
                         case "/?":
@@ -87,6 +88,7 @@ namespace Dikai.Simulator
             Console.WriteLine("  --report 0        push 3Fh status every N seconds (0 = off)");
             Console.WriteLine("  --blank-names     answer 41h with empty (00) file names, like some real units");
             Console.WriteLine("  --reject-vars-in-34h  answer error 6 when 34h carries variables, like some real units");
+            Console.WriteLine("  --clock-offset -74    printer clock differs from this PC by N seconds (negative = behind)");
         }
     }
 }

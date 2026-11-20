@@ -21,6 +21,9 @@ namespace Dikai.App
 
         private readonly AppSettings _settings;
         private readonly AdminLock _admin;
+        private readonly Timer _timeSyncTimer;
+        private static readonly TimeSpan TimeSyncEvery = TimeSpan.FromMinutes(30);
+        private static readonly TimeSpan TimeSyncThreshold = TimeSpan.FromSeconds(3);
         private readonly object _gate = new object();
         private readonly List<PrinterSession> _sessions = new List<PrinterSession>();
         private readonly HashSet<PrinterSession> _awaitingPrintDone = new HashSet<PrinterSession>();
@@ -44,6 +47,54 @@ namespace Dikai.App
             foreach (var p in settings.Printers) AddSession(p);
             if (startupWarning != null) AddLog(new LogEntry { Printer = "-", Kind = LogKind.Error, Text = startupWarning }, null);
             AddLog(new LogEntry { Printer = "-", Kind = LogKind.Info, Text = "เริ่มโปรแกรม — log อยู่ที่ " + AppSettings.LogDirectory }, null);
+            _timeSyncTimer = new Timer(_ => TimeSyncTick(), null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(15));
+        }
+
+        // ------------------------------------------------------------------ ตั้งเวลาเครื่องตามคอมพิวเตอร์อัตโนมัติ
+
+        /// <summary>
+        /// เปิดไว้ (AppSettings.AutoSyncTime): เครื่องที่เชื่อมต่ออยู่จะถูกตรวจเวลาทันทีที่ต่อ แล้วตรวจซ้ำทุก 30 นาที
+        /// คลาดตั้งแต่ 3 วินาทีก็ส่ง 48h ตั้งเวลาตามคอม (ไม่เชื่อมต่อเครื่องที่ยังไม่ต่อให้เอง)
+        /// </summary>
+        private void TimeSyncTick()
+        {
+            if (!_settings.AutoSyncTime) return;
+            List<PrinterSession> all;
+            lock (_gate) all = _sessions.ToList();
+            var now = DateTime.UtcNow;
+            foreach (var s in all)
+            {
+                var c = s.Client;
+                if (c == null || !s.IsConnected) continue;
+                bool newConnection = !ReferenceEquals(s.TimeSyncedClient, c);
+                if (!newConnection && now < s.NextTimeSyncUtc) continue;
+                if (Interlocked.CompareExchange(ref s.TimeSyncRunning, 1, 0) != 0) continue;
+                var session = s;
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        var r = await c.SyncTimeAsync(TimeSyncThreshold).ConfigureAwait(false);
+                        session.TimeSyncedClient = c;
+                        session.NextTimeSyncUtc = DateTime.UtcNow + TimeSyncEvery;
+                        if (r.Changed)
+                            session.Write(LogKind.Info, "ตั้งเวลาเครื่องตามคอมพิวเตอร์อัตโนมัติ: เครื่อง" + (r.Drift < TimeSpan.Zero ? "ช้ากว่า " : "เร็วกว่า ") +
+                                Math.Round(r.Drift.Duration().TotalSeconds) + " วินาที → ตอนนี้คลาด " + Math.Round(r.DriftAfter.Duration().TotalSeconds) + " วินาที");
+                        else if (newConnection)
+                            session.Write(LogKind.Info, "ตรวจเวลาเครื่อง: ตรงกับคอมพิวเตอร์ (คลาด " + Math.Round(r.Drift.Duration().TotalSeconds) + " วินาที) ไม่ต้องตั้ง");
+                    }
+                    catch (Exception ex)
+                    {
+                        session.NextTimeSyncUtc = DateTime.UtcNow + TimeSpan.FromMinutes(5); // ลองใหม่อีก 5 นาที
+                        session.TimeSyncedClient = c;
+                        session.Write(LogKind.Error, "ตั้งเวลาเครื่องอัตโนมัติไม่สำเร็จ: " + ex.Message);
+                    }
+                    finally
+                    {
+                        Interlocked.Exchange(ref session.TimeSyncRunning, 0);
+                    }
+                });
+            }
         }
 
         private PrinterSession AddSession(PrinterProfile p)
@@ -242,6 +293,7 @@ namespace Dikai.App
                     {
                         { "showStatusFrames", _settings.ShowStatusFrames },
                         { "autoStatusSeconds", _settings.AutoStatusSeconds },
+                        { "autoSyncTime", _settings.AutoSyncTime },
                         { "timeoutMs", _settings.TimeoutMs },
                     }
                 },
@@ -302,6 +354,18 @@ namespace Dikai.App
 
         private object SaveAppSettings(JObj b)
         {
+            if (b.Has("autoSyncTime"))
+            {
+                // เปลี่ยนเวลาที่พิมพ์บนสินค้าโดยอัตโนมัติ → เฉพาะผู้ดูแล
+                _admin.Require();
+                bool on = b.Bool("autoSyncTime");
+                if (on != _settings.AutoSyncTime)
+                {
+                    _settings.AutoSyncTime = on;
+                    AddLog(new LogEntry { Printer = "-", Kind = LogKind.Info, Text = on ? "เปิดตั้งเวลาเครื่องตามคอมพิวเตอร์อัตโนมัติ" : "ปิดตั้งเวลาเครื่องตามคอมพิวเตอร์อัตโนมัติ" }, null);
+                    lock (_gate) foreach (var s in _sessions) s.TimeSyncedClient = null; // ตรวจทุกเครื่องอีกครั้งทันที
+                }
+            }
             if (b.Has("showStatusFrames")) _settings.ShowStatusFrames = b.Bool("showStatusFrames");
             if (b.Has("autoStatusSeconds")) _settings.AutoStatusSeconds = Math.Max(1, Math.Min(3600, b.Int("autoStatusSeconds", 5)));
             Save();
@@ -701,6 +765,7 @@ namespace Dikai.App
 
         public void Dispose()
         {
+            _timeSyncTimer?.Dispose();
             Save();
             List<PrinterSession> all;
             lock (_gate) all = _sessions.ToList();

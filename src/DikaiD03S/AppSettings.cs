@@ -94,6 +94,8 @@ namespace Dikai.App
         [DataMember(Order = 5)] public int AutoStatusSeconds { get; set; }
         /// <summary>รหัสผ่านผู้ดูแล (PBKDF2) — ว่าง = ใช้รหัสเริ่มต้น ดู AdminLock</summary>
         [DataMember(Order = 6)] public string AdminPassword { get; set; }
+        /// <summary>ตั้งเวลาเครื่องพิมพ์ตามคอมพิวเตอร์อัตโนมัติ (ตอนเชื่อมต่อ + ทุก 30 นาที ถ้าคลาดเกิน 3 วินาที) — ปิดไว้เป็นค่าเริ่มต้น</summary>
+        [DataMember(Order = 7)] public bool AutoSyncTime { get; set; }
 
         public static string BaseDirectory { get; private set; }
         public static string FilePath => Path.Combine(BaseDirectory, "DikaiD03S.settings.json");
