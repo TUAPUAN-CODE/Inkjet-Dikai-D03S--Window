@@ -303,6 +303,12 @@ select.field option { background: #111827; color: #eaf0fb; }
 /* ช่องที่ล็อก (ดึงมาจากเครื่อง ห้ามแก้) */
 .field[readonly] { cursor: default; background: var(--surface-3); border-style: dashed; }
 .field[readonly]:focus { border-color: var(--stroke-2); box-shadow: none; }
+body:not(.admin-on) #tpl, body:not(.admin-on) .var .name {
+  pointer-events: none; user-select: none; -webkit-user-select: none; caret-color: transparent; cursor: default;
+}
+/* คลิกทะลุช่องที่ล็อกไปโดนกล่องแม่ ก็ต้องไม่เลือกข้อความข้างใต้ได้ (ช่อง "ค่า" ยังเลือก/พิมพ์ได้ตามปกติ) */
+body:not(.admin-on) .lockable, body:not(.admin-on) .var { user-select: none; -webkit-user-select: none; }
+body:not(.admin-on) .var .value { user-select: text; -webkit-user-select: text; }
 .lockable { position: relative; }
 .lockable > .lk-badge { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--faint); pointer-events: none; display: flex; }
 .lockable > .lk-badge svg { width: 14px; height: 14px; }
@@ -661,7 +667,7 @@ body.admin-on .var { grid-template-columns: minmax(76px, 128px) minmax(0, 1fr) a
                 <button class="btn sm" id="btnFromDevice" type="button"><span class="spin"></span><i class="ico" data-icon="download"></i>ดึงจากเครื่อง</button>
               </div>
             </div>
-            <label class="label" for="tpl">แม่แบบ <span id="tplNote" class="muted"></span></label>
+            <span class="label">แม่แบบ <span id="tplNote" class="muted"></span></span>
             <div class="lockable">
               <input class="field big" id="tpl" placeholder="กด “ดึงจากเครื่อง” เพื่ออ่านชื่อแม่แบบ" autocomplete="off" spellcheck="false" readonly>
               <span class="lk-badge" data-icon="lock"></span>
@@ -1304,15 +1310,17 @@ function renderVars() {
   const d = draft();
   const box = $("#vars");
   if (!d) { box.innerHTML = ""; return; }
-  const fresh = d.variables.length === 0 && !(d.template || "").trim();
+  // data-i ต้องชี้ตำแหน่งจริงใน draft จึงใส่ index ก่อนกรอง
+  const rows = d.variables.map((v, i) => [v, i]).filter(([v]) => adminOn() || (v.name || "").trim());
+  const fresh = rows.length === 0 && !(d.template || "").trim();
   $("#btnFromDevice").classList.toggle("primary", fresh); // ยังไม่มีข้อมูล → เน้นปุ่มดึงจากเครื่อง
-  if (d.variables.length === 0) {
+  if (rows.length === 0) {
     box.innerHTML = adminOn()
       ? `<div class="empty"><b>ยังไม่มีตัวแปร</b><br>กด <b>ดึงจากเครื่อง</b> เพื่ออ่านชื่อตัวแปรของแม่แบบอัตโนมัติ หรือกด <b>เพิ่มตัวแปร</b> แล้วพิมพ์ชื่อเอง</div>`
       : `<div class="empty"><b>ยังไม่มีข้อมูลจากเครื่อง</b><br>กด <b>ดึงจากเครื่อง</b> เพื่ออ่านชื่อแม่แบบ ชื่อตัวแปร และค่าปัจจุบัน</div>`;
     return;
   }
-  box.innerHTML = d.variables.map(varRow).join("");
+  box.innerHTML = rows.map(([v, i]) => varRow(v, i)).join("");
 }
 
 function renderTemplateChips() {
@@ -1338,6 +1346,7 @@ function updateTemplateState() {
   const edit = adminOn();
   $("#tpl").disabled = !!disabled;
   $("#tpl").readOnly = !edit; // ชื่อแม่แบบดึงมาจากเครื่อง: ล็อกจนกว่าจะใส่รหัสผ่านผู้ดูแล
+  $("#tpl").tabIndex = edit ? 0 : -1;
   $("#tpl").placeholder = edit ? "ชื่อแม่แบบในเครื่อง เช่น TEST" : "กด “ดึงจากเครื่อง” เพื่ออ่านชื่อแม่แบบ";
   $("#sendSub").textContent = edit ? "โหมดผู้ดูแล — แก้ชื่อแม่แบบและตัวแปรได้" : "ชื่อแม่แบบและตัวแปรดึงมาจากเครื่อง — แก้ได้เฉพาะค่าที่จะพิมพ์";
   $("#tplNote").textContent = disabled ? "· โหมดนี้ใช้แม่แบบที่เลือกไว้ในเครื่องแล้ว" : "";
