@@ -36,6 +36,9 @@ internal static class Program
         await RunAsync("เลือกแม่แบบ+ค่า: เครื่องที่ 34h ไม่รับตัวแปร (error 6) → 34h แล้ว 35h", SelectTwoStep);
         await RunAsync("เลือกแม่แบบที่ไม่มีจริง → ยัง error 6 (ไม่ถูกกลืนโดยการลองใหม่)", SelectMissingTemplate);
         Run("ฟอนต์ (แม่แบบที่ผูกไว้): เก็บในไฟล์ตั้งค่า + ไฟล์เก่าไม่มีช่องนี้ก็อ่านได้", FontSettings);
+        Run("ค่าตัวแปรอัตโนมัติ: {dd/MM/yyyy} พ.ศ. เวลา วันที่ของปี", TokensBasic);
+        Run("ค่าตัวแปรอัตโนมัติ: บวก/ลบ วัน เดือน ปี (วันหมดอายุ)", TokensOffsets);
+        Run("ค่าตัวแปรอัตโนมัติ: พิมพ์ผิดต้อง error ไม่พิมพ์ผิดลงบรรจุภัณฑ์", TokensErrors);
         await RunAsync("ตั้งเวลาเครื่องตามคอม: เครื่องช้า 74 วินาที (แบบเครื่องจริง) → ตั้งแล้วตรง", TimeSyncBehind);
         await RunAsync("ตั้งเวลาเครื่องตามคอม: เร็วกว่า / คลาดไม่ถึงเกณฑ์ไม่แตะเวลาเครื่อง", TimeSyncAheadAndWithinThreshold);
         await RunAsync("รหัสผ่านผู้ดูแล: รหัสเริ่มต้น / ผิด / ล็อกซ้ำ", AdminUnlock);
@@ -104,6 +107,58 @@ internal static class Program
             await Task.Delay(50);
         }
         Equal(expected, sim.CurrentValue(name), "ค่า " + name);
+    }
+
+    // ---------------------------------------------------------------- ค่าตัวแปรอัตโนมัติ (วันเวลาของคอม)
+
+    private static readonly DateTime Sample = new DateTime(2026, 11, 20, 8, 5, 9);
+
+    private static string Tok(string v) { return ValueTokens.Expand(v, Sample); }
+
+    private static void TokensBasic()
+    {
+        Equal("ABC-123", Tok("ABC-123"), "ไม่มีตัวแทน = ไม่แตะ");
+        Equal("", Tok(""), "ว่าง");
+        Equal("20/11/2026", Tok("{dd/MM/yyyy}"), "วันที่");
+        Equal("2026-11-20", Tok("{yyyy-MM-dd}"), "ISO");
+        Equal("20/11/2569", Tok("{dd/MM/BBBB}"), "พ.ศ.");
+        Equal("69", Tok("{BB}"), "พ.ศ. 2 หลัก");
+        Equal("26", Tok("{yy}"), "ปี 2 หลัก");
+        Equal("08:05:09", Tok("{HH:mm:ss}"), "เวลา");
+        Equal("20/11/2026 08:05", Tok("{dd/MM/yyyy HH:mm}"), "วันที่+เวลา");
+        Equal("26324", Tok("{yy}{JJJ}"), "รหัสวันที่ของปี (20 พ.ย. = วันที่ 324)");
+        Equal("20 NOV 2026", Tok("{dd MMM yyyy}"), "เดือนอังกฤษ");
+        Equal("MFG 20/11/2026 LOT-A", Tok("MFG {dd/MM/yyyy} LOT-A"), "ปนกับข้อความ");
+        Equal("{dd}", Tok("{{dd}}"), "{{ }} = ตัวอักษร { }");
+        Equal("วันที่ 20/11/2026", Tok("วันที่ {dd/MM/yyyy}"), "ภาษาไทยปนได้");
+        Equal("2026-01-05", ValueTokens.Expand("{yyyy-MM-dd}", new DateTime(2026, 1, 5)), "เติมศูนย์หน้าเลขหลักเดียว");
+        Equal("001", ValueTokens.Expand("{JJJ}", new DateTime(2026, 1, 1)), "วันที่ 1 ของปี");
+        Equal("366", ValueTokens.Expand("{JJJ}", new DateTime(2028, 12, 31)), "ปีอธิกสุรทิน");
+    }
+
+    private static void TokensOffsets()
+    {
+        Equal("20/05/2027", Tok("{dd/MM/yyyy+6M}"), "+6 เดือน");
+        Equal("20/11/2027", Tok("{dd/MM/yyyy+1y}"), "+1 ปี");
+        Equal("19/11/2027", Tok("{dd/MM/yyyy+1y-1d}"), "+1 ปี -1 วัน");
+        Equal(Sample.AddDays(180).ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture), Tok("{dd/MM/yyyy+180d}"), "+180 วัน");
+        Equal("27/11/2026", Tok("{dd/MM/yyyy+1w}"), "+1 สัปดาห์");
+        Equal("19/11/2026", Tok("{dd/MM/yyyy-1d}"), "-1 วัน");
+        Equal("20:05", Tok("{HH:mm+12h}"), "+12 ชั่วโมง");
+        Equal("08:35", Tok("{HH:mm+30m}"), "+30 นาที");
+        Equal("31/01/2027", ValueTokens.Expand("{dd/MM/yyyy+1M}", new DateTime(2026, 12, 31)), "สิ้นเดือน +1 เดือน");
+        Equal("28/02/2027", ValueTokens.Expand("{dd/MM/yyyy+1M}", new DateTime(2027, 1, 31)), "31 ม.ค. +1 เดือน = สิ้นเดือน ก.พ.");
+        Equal("EXP 20/11/2027", Tok("EXP {dd/MM/yyyy+1y}"), "ข้อความนำ");
+    }
+
+    private static void TokensErrors()
+    {
+        foreach (var bad in new[] { "{dd/mm/yyyy}", "{DD/MM/YYYY}", "{foo}", "{dd", "}", "{}", "{/}", "{dd/MM/yyyy+99999999d}", "{dd/MM/yyyy+9999999y}", "a } b" })
+            Throws<ArgumentException>(() => Tok(bad), "ต้อง error: " + bad);
+        var msg = "";
+        try { Tok("{dd/mm/yyyy}"); } catch (ArgumentException ex) { msg = ex.Message; }
+        Equal(true, msg.Contains("MM"), "ข้อความ error บอกให้ใช้ MM");
+        Equal("12:30", ValueTokens.Expand("{HH:mm}", new DateTime(2026, 1, 1, 12, 30, 0)), "mm ใช้ได้เมื่อมี HH");
     }
 
     private static async Task TimeSyncBehind()

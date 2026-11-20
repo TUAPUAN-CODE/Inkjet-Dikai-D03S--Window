@@ -400,6 +400,17 @@ body.admin-on .var { grid-template-columns: minmax(76px, 128px) minmax(0, 1fr) a
 .result.bad { color: var(--bad); }
 
 /* ฟอนต์ = แม่แบบที่ตั้งไว้ในเครื่อง (เลือกแล้วสลับแม่แบบ) */
+/* ค่าตัวแปรอัตโนมัติ: วันเวลาของคอม */
+.dt-row { flex: none; margin-top: 10px; }
+.dt-row .label-row { margin: 0 0 5px; }
+.dt-row .tchips { margin-top: 0; }
+.dt-row .tchip { height: 26px; font-size: 12px; padding: 0 11px; }
+.var .xp { grid-column: 2; margin: -3px 0 2px 2px; font-size: 12px; font-weight: 600; color: var(--good); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.var .xp.bad { color: var(--bad); }
+.tok-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+.tok-table td { padding: 3px 8px; border-top: 1px solid var(--stroke); vertical-align: top; }
+.tok-table td:first-child { font-family: var(--mono); white-space: nowrap; color: var(--text); }
+.tok-table td:last-child { color: var(--muted); }
 .font-row { flex: none; }
 .font-row .label-row { margin: 8px 0 5px; }
 .font-row .tchips { margin-top: 0; }
@@ -690,6 +701,10 @@ body.admin-on .var { grid-template-columns: minmax(76px, 128px) minmax(0, 1fr) a
             </div>
             <div class="label-row"><span class="label">ตัวแปร</span><span class="sub" id="varHint">ภาษาไทย 1 ตัว = 3 ไบต์ · สูงสุด 255 ไบต์ต่อช่อง</span></div>
             <div class="vars" id="vars"></div>
+            <div class="dt-row">
+              <div class="label-row"><span class="label">ใส่วันเวลาอัตโนมัติ <span class="muted">· ใช้เวลาของคอมตอนกดส่ง ไม่ต้องตั้งโค้ดที่เครื่อง</span></span><button class="link" id="btnDtHelp" type="button">วิธีใช้</button></div>
+              <div class="tchips" id="dtChips"></div>
+            </div>
             <button class="btn dashed sm edit-only" id="btnAddVar" type="button" style="margin-top:8px"><i data-icon="plus"></i>เพิ่มตัวแปร</button>
           </div>
 
@@ -1325,6 +1340,7 @@ function varRow(v, i) {
     <input class="field value" value="${esc(v.value)}" placeholder="ค่าที่จะพิมพ์" autocomplete="off">
     <span class="bytes ${n > 255 ? "over" : ""}">${n}/255 B</span>
     <button class="icon-btn sm danger edit-only" data-del type="button" title="ลบตัวแปร">${icon("x")}</button>
+    <div class="xp hidden"></div>
   </div>`;
 }
 
@@ -1400,6 +1416,77 @@ $("#fontChips").addEventListener("click", e => {
   renderFontChips();
   onDraftChanged();
 });
+
+/** ค่าที่มีตัวแทนวันเวลา เช่น {dd/MM/yyyy}: โชว์ "→ ค่าที่จะส่งจริง" ใต้ช่อง และนับไบต์จากค่าที่แปลงแล้ว */
+const hasToken = v => /[{}]/.test(v || "");
+function showExpanded(values) {
+  const d = draft();
+  if (!d) return;
+  $$("#vars .var").forEach(row => {
+    const i = +row.dataset.i, v = d.variables[i];
+    if (!v) return;
+    const xp = row.querySelector(".xp"), b = row.querySelector(".bytes");
+    const tok = hasToken(v.value), val = values ? values[i] : undefined;
+    xp.classList.toggle("hidden", !tok);
+    xp.classList.toggle("bad", tok && val === null);
+    xp.textContent = !tok ? "" : val === null ? "รูปแบบวันเวลาไม่ถูกต้อง — ดูข้อความด้านล่าง หรือกด วิธีใช้" : val === undefined ? "" : "→ จะส่ง: " + val;
+    const n = utf8Len(tok && typeof val === "string" ? val : v.value);
+    b.textContent = n + "/255 B";
+    b.classList.toggle("over", n > 255);
+  });
+}
+// เวลาในตัวอย่างเดินไปเรื่อยๆ — รีเฟรชทุก 15 วินาทีถ้ามีช่องที่ใช้ตัวแทนวันเวลา
+setInterval(() => {
+  const d = S.view === "send" && !document.hidden && draft();
+  if (d && d.variables.some(v => hasToken(v.value))) schedulePreview(0);
+}, 15000);
+
+const DT_PRESETS = [
+  ["วันที่", "{dd/MM/yyyy}"],
+  ["วันที่ พ.ศ.", "{dd/MM/BBBB}"],
+  ["วันที่ + เวลา", "{dd/MM/yyyy HH:mm}"],
+  ["เวลา", "{HH:mm}"],
+  ["หมดอายุ +6 เดือน", "{dd/MM/yyyy+6M}"],
+  ["หมดอายุ +1 ปี", "{dd/MM/yyyy+1y}"],
+  ["รหัสวันที่ (ปี+วันที่ 1–366)", "{yy}{JJJ}"],
+];
+$("#dtChips").innerHTML = DT_PRESETS.map(([t, tok], i) => `<button class="tchip" data-i="${i}" type="button" title="${esc(tok)}">${esc(t)}</button>`).join("");
+$("#dtChips").addEventListener("mousedown", e => e.preventDefault()); // ไม่ให้ช่องค่าเสียโฟกัส จะได้แทรกตรงเคอร์เซอร์
+let lastValueEl = null;
+$("#vars").addEventListener("focusin", e => { if (e.target.classList && e.target.classList.contains("value")) lastValueEl = e.target; });
+$("#dtChips").addEventListener("click", e => {
+  const b = e.target.closest(".tchip");
+  if (!b) return;
+  const inputs = $$("#vars .value");
+  if (!inputs.length) { toast("warn", "ยังไม่มีช่องค่าให้ใส่", "กด “ดึงจากเครื่อง” ก่อน"); return; }
+  const el = inputs.includes(document.activeElement) ? document.activeElement : (lastValueEl && inputs.includes(lastValueEl) ? lastValueEl : inputs[0]);
+  const tok = DT_PRESETS[+b.dataset.i][1];
+  const a = el.selectionStart == null ? el.value.length : el.selectionStart, z = el.selectionEnd == null ? a : el.selectionEnd;
+  el.value = el.value.slice(0, a) + tok + el.value.slice(z);
+  el.focus();
+  el.setSelectionRange(a + tok.length, a + tok.length);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+});
+$("#btnDtHelp").onclick = () => modal(`<div class="modal wide" role="dialog" aria-modal="true">
+  <h3>${icon("clock")}ใส่วันเวลาอัตโนมัติในค่าตัวแปร</h3>
+  <p class="sub" style="margin-top:4px">พิมพ์ตัวแทนในช่อง “ค่าที่จะพิมพ์” โปรแกรมแปลงเป็นวันเวลาของคอมพิวเตอร์ <b>ตอนกดส่ง</b> แล้วส่งไปเครื่องเป็นข้อความธรรมดา — ไม่ต้องตั้งโค้ดวันที่ที่เครื่อง ink เอง (ใต้ช่องจะโชว์ “จะส่ง: …” ให้ดูก่อนกดส่ง)</p>
+  <table class="tok-table">
+    <tr><td>yyyy · yy</td><td>ปี ค.ศ. 4 หลัก / 2 หลัก (2026 / 26)</td></tr>
+    <tr><td>BBBB · BB</td><td>ปี พ.ศ. 4 หลัก / 2 หลัก (2569 / 69)</td></tr>
+    <tr><td>MM · MMM</td><td>เดือน 01–12 / ชื่อเดือนอังกฤษ (NOV)</td></tr>
+    <tr><td>dd</td><td>วันที่ 01–31</td></tr>
+    <tr><td>HH · mm · ss</td><td>ชั่วโมง 00–23 · <b>นาที</b> · วินาที (ระวัง: mm = นาที, <b>MM</b> = เดือน)</td></tr>
+    <tr><td>JJJ</td><td>วันที่ของปี 001–366 (รหัสแบบ Julian)</td></tr>
+    <tr><td>+6M  -1d  +1y</td><td>บวก/ลบ: d วัน · w สัปดาห์ · M เดือน · y ปี · h ชั่วโมง · m นาที · s วินาที (ต่อกันได้ เช่น +1y-1d)</td></tr>
+    <tr><td>{{  }}</td><td>ถ้าต้องการพิมพ์ตัวอักษร { หรือ } จริงๆ</td></tr>
+  </table>
+  <div class="tips">
+    ตัวอย่าง (วันนี้ 20 พ.ย. 2026):<br>
+    <b>{dd/MM/yyyy}</b> → 20/11/2026 · <b>{dd/MM/BBBB}</b> → 20/11/2569 · <b>EXP {dd/MM/yyyy+6M}</b> → EXP 20/05/2027 · <b>{yy}{JJJ}</b> → 26324 · <b>{dd MMM yyyy}</b> → 20 NOV 2026<br>
+    ข้อควรรู้: ค่าถูกคำนวณ <b>ตอนกดส่ง</b> ถ้าไลน์เดินข้ามเที่ยงคืนหรือข้ามชั่วโมง ต้องกดส่งใหม่เพื่ออัปเดต · ใช้เวลาของ Windows ในเครื่องคอม จึงควรตั้งให้ตรง · พิมพ์ผิด (เช่น DD, mm แทน MM) โปรแกรมจะแจ้ง error ไม่ปล่อยให้พิมพ์ผิดลงบรรจุภัณฑ์
+  </div>
+  <div class="foot"><button class="btn primary" type="button" data-close>เข้าใจแล้ว</button></div>
+</div>`, root => { const c = root.querySelector("[data-close]"); c.onclick = closeModal; c.focus(); root.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); }); });
 
 function openFontsModal() {
   const p = sel();
@@ -1548,6 +1635,7 @@ function schedulePreview(ms) {
         ? `<span style="color:var(--warn)">${esc(r.error)}</span>`
         : `ข้อมูลที่จะส่ง <b style="color:var(--text)">${r.length}</b> / ${r.max} ไบต์${over ? ' <span style="color:var(--bad)">· ยาวเกิน</span>' : ""}`;
       $("#hexPreview").textContent = r.hex || "—";
+      showExpanded(r.values);
     } catch { /* ไม่ต้องแจ้ง */ }
   }, ms);
 }
@@ -1571,7 +1659,7 @@ async function doSend() {
       upsertPrinter(r.printer);
       const res = r.waitingPrintDone
         ? { tone: "warn", title: "เครื่องรับแล้ว · รอพิมพ์เสร็จ…", sub: r.time, spinning: true }
-        : { tone: "good", title: r.mode === 2 ? "พิมพ์เสร็จแล้ว" : "ส่งสำเร็จ", sub: r.time + (r.mode === 0 ? " · แม่แบบ " + d.template : ""), spinning: false };
+        : { tone: "good", title: r.mode === 2 ? "พิมพ์เสร็จแล้ว" : "ส่งสำเร็จ", sub: r.time + (r.mode === 0 ? " · แม่แบบ " + d.template : "") + (d.variables.some(v => hasToken(v.value)) && r.values ? " · " + r.values.map(v => v.name + "=" + v.value).join(", ") : ""), spinning: false };
       S.results[id] = res;
       if (S.selId === id) {
         setResult($("#sendResult"), res.tone, res.title, res.sub, res.spinning);

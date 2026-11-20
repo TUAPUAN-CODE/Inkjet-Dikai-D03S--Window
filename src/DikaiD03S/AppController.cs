@@ -495,7 +495,8 @@ namespace Dikai.App
 
         // ------------------------------------------------------------------ send
 
-        private static List<TemplateVariable> ReadVariables(JObj b)
+        /// <param name="now">เวลาของคอมพิวเตอร์ตอนส่ง ใช้แปลงตัวแทนวันเวลาในค่า เช่น {dd/MM/yyyy} (ดู ValueTokens)</param>
+        private static List<TemplateVariable> ReadVariables(JObj b, DateTime now)
         {
             var list = new List<TemplateVariable>();
             int row = 0;
@@ -503,18 +504,27 @@ namespace Dikai.App
             {
                 row++;
                 var name = (v.Str("name") ?? "").Trim();
-                var value = v.Str("value") ?? "";
-                if (name.Length == 0 && value.Length == 0) continue;
+                var raw = v.Str("value") ?? "";
+                if (name.Length == 0 && raw.Length == 0) continue;
                 if (name.Length == 0) throw new DgcpException("ตัวแปรแถวที่ " + row + " ยังไม่มีชื่อ");
                 if (list.Any(x => x.Name == name)) throw new DgcpException("ชื่อตัวแปร \"" + name + "\" ซ้ำกัน");
+                string value;
+                try
+                {
+                    value = ValueTokens.Expand(raw, now);
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new DgcpException("ตัวแปร \"" + name + "\": " + ex.Message);
+                }
                 list.Add(new TemplateVariable(name, value));
             }
             return list;
         }
 
-        private static byte[] BuildFrame(PrinterProfile p, JObj b, out List<TemplateVariable> vars, out SendMode mode, out string template, out ushort alloc)
+        private static byte[] BuildFrame(PrinterProfile p, JObj b, DateTime now, out List<TemplateVariable> vars, out SendMode mode, out string template, out ushort alloc)
         {
-            vars = ReadVariables(b);
+            vars = ReadVariables(b, now);
             mode = (SendMode)Math.Max(0, Math.Min(2, b.Int("mode")));
             template = (b.Str("template") ?? "").Trim();
             alloc = (ushort)Math.Max(0, Math.Min(65535, b.Int("allocation")));
@@ -531,21 +541,29 @@ namespace Dikai.App
         {
             var s = Find(b);
             int max = s.Profile.MaxFrame;
+            var now = DateTime.Now;
+            // ค่าที่แปลงแล้วของแต่ละช่อง (null = ตัวแทนวันเวลาในช่องนั้นผิด) ให้หน้าจอโชว์ว่า "จะส่งอะไรไป"
+            var values = new List<object>();
+            foreach (var v in b.Objects("variables"))
+            {
+                try { values.Add(ValueTokens.Expand(v.Str("value") ?? "", now)); }
+                catch (ArgumentException) { values.Add(null); }
+            }
             try
             {
-                var frame = BuildFrame(s.Profile, b, out _, out _, out _, out _);
-                return new Dictionary<string, object> { { "hex", Hex.Format(frame) }, { "length", frame.Length }, { "max", max }, { "error", null } };
+                var frame = BuildFrame(s.Profile, b, now, out _, out _, out _, out _);
+                return new Dictionary<string, object> { { "hex", Hex.Format(frame) }, { "length", frame.Length }, { "max", max }, { "error", null }, { "values", values } };
             }
             catch (DgcpException ex)
             {
-                return new Dictionary<string, object> { { "hex", "" }, { "length", 0 }, { "max", max }, { "error", ex.Message } };
+                return new Dictionary<string, object> { { "hex", "" }, { "length", 0 }, { "max", max }, { "error", ex.Message }, { "values", values } };
             }
         }
 
         private async Task<object> SendAsync(JObj b)
         {
             var s = Find(b);
-            var frame = BuildFrame(s.Profile, b, out var vars, out var mode, out var template, out var alloc);
+            var frame = BuildFrame(s.Profile, b, DateTime.Now, out var vars, out var mode, out var template, out var alloc);
             if (frame.Length > s.Profile.MaxFrame)
                 throw new DgcpException("ข้อมูลยาว " + frame.Length + " ไบต์ เกินที่เครื่องรับได้ (" + s.Profile.MaxFrame + " ไบต์)");
             bool clearFirst = b.Bool("clearFirst");
@@ -603,6 +621,7 @@ namespace Dikai.App
                 { "time", DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture) },
                 { "mode", (int)mode },
                 { "waitingPrintDone", mode == SendMode.UpdateWithFeedback && waiting },
+                { "values", vars.Select(v => new Dictionary<string, object> { { "name", v.Name }, { "value", v.Value } }).ToList() },
                 { "printer", PrinterDto(s) },
             };
         }
