@@ -399,6 +399,17 @@ body.admin-on .var { grid-template-columns: minmax(76px, 128px) minmax(0, 1fr) a
 .result.warn .ri { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
 .result.bad { color: var(--bad); }
 
+/* ฟอนต์ = แม่แบบที่ตั้งไว้ในเครื่อง (เลือกแล้วสลับแม่แบบ) */
+.font-row { flex: none; }
+.font-row .label-row { margin: 8px 0 5px; }
+.font-row .tchips { margin-top: 0; }
+.font-row.dim .tchips { opacity: .5; }
+.font-row .tchip { height: 28px; padding: 0 14px; font-size: 12.5px; }
+.modal.wide { width: min(640px, 100%); }
+.frows { max-height: 38vh; overflow: auto; margin-top: 12px; padding-right: 2px; }
+.frow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; align-items: center; margin-bottom: 6px; }
+.fbtns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
 /* ---------------------------------------------------------------- สถานะ */
 .bento { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; flex: 1; min-height: 0; }
 .span-3 { grid-column: span 3; }
@@ -673,6 +684,10 @@ body.admin-on .var { grid-template-columns: minmax(76px, 128px) minmax(0, 1fr) a
               <span class="lk-badge" data-icon="lock"></span>
             </div>
             <div class="tchips edit-only" id="tplChips"></div>
+            <div class="font-row hidden" id="fontRow">
+              <div class="label-row"><span class="label">ฟอนต์ <span class="muted">· สลับไปแม่แบบที่ตั้งไว้ในเครื่อง</span></span><button class="link edit-only" id="btnFonts" type="button">ตั้งค่าฟอนต์</button></div>
+              <div class="tchips" id="fontChips"></div>
+            </div>
             <div class="label-row"><span class="label">ตัวแปร</span><span class="sub" id="varHint">ภาษาไทย 1 ตัว = 3 ไบต์ · สูงสุด 255 ไบต์ต่อช่อง</span></div>
             <div class="vars" id="vars"></div>
             <button class="btn dashed sm edit-only" id="btnAddVar" type="button" style="margin-top:8px"><i data-icon="plus"></i>เพิ่มตัวแปร</button>
@@ -1036,7 +1051,7 @@ function renderAdmin() {
   b.title = on ? "ปลดล็อกอยู่ — คลิกเพื่อล็อกเดี๋ยวนี้" : "ใส่รหัสผ่านเพื่อใช้หน้า ควบคุม / ข้อมูลเครื่อง / HEX และแก้ชื่อแม่แบบ-ตัวแปร";
   $$("#nav .lk").forEach(el => { el.innerHTML = on ? "" : icon("lock"); });
   if (!on && ADMIN_VIEWS.includes(S.view)) setView("send");
-  if (sel()) { renderVars(); updateTemplateState(); }
+  if (sel()) { renderVars(); updateTemplateState(); renderFontChips(); }
   tickAdmin();
   requestAnimationFrame(() => movePill($("#nav")));
 }
@@ -1224,7 +1239,7 @@ function upsertPrinter(dto, keepDraft = true) {
     S.printers[i] = { ...dto, draft: keepDraft && old.draft ? old.draft : dto.draft };
   }
   renderRail();
-  if (dto.id === S.selId) renderHero();
+  if (dto.id === S.selId) { renderHero(); if (draft()) renderFontChips(); }
 }
 
 function selectPrinter(id) {
@@ -1284,6 +1299,7 @@ $("#modes").addEventListener("click", e => {
   d.mode = +b.dataset.mode;
   renderModes(d.mode);
   updateTemplateState();
+  renderFontChips();
   onDraftChanged();
 });
 
@@ -1353,6 +1369,80 @@ function updateTemplateState() {
   $("#tplChips").style.opacity = disabled ? .45 : 1;
 }
 
+/** ฟอนต์: ปุ่มเลือก (แต่ละปุ่ม = แม่แบบในเครื่อง) เลือกแล้วตั้งแม่แบบ + โหมด 34h ตอนกดส่งโปรแกรมสลับแม่แบบให้ */
+function renderFontChips() {
+  const p = sel(), d = draft(), row = $("#fontRow");
+  const fonts = (p && p.fonts) || [];
+  row.classList.toggle("hidden", !p || (fonts.length === 0 && !adminOn())); // ยังไม่ตั้งค่า: เห็นเฉพาะผู้ดูแล
+  if (!p || !d) return;
+  const cur = (d.template || "").trim().toLowerCase();
+  row.classList.toggle("dim", d.mode !== 0);
+  $("#fontChips").innerHTML = fonts.length
+    ? fonts.map((f, i) => `<button class="tchip ${(f.template || "").toLowerCase() === cur ? "on" : ""}" data-i="${i}" type="button" title="แม่แบบในเครื่อง: ${esc(f.template)}">${esc(f.name)}</button>`).join("")
+    : `<span class="sub">ยังไม่ได้ตั้งค่าฟอนต์ — กด “ตั้งค่าฟอนต์”</span>`;
+}
+$("#fontChips").addEventListener("click", e => {
+  const b = e.target.closest(".tchip");
+  const p = sel(), d = draft();
+  const f = b && p && p.fonts && p.fonts[+b.dataset.i];
+  if (!f) return;
+  d.template = f.template;
+  $("#tpl").value = f.template; // ช่องแม่แบบ (ล็อก) แสดงชื่อใหม่
+  d.mode = 0; // เปลี่ยนฟอนต์ = เปลี่ยนแม่แบบ จึงต้องใช้โหมด "เลือกแม่แบบ + ใส่ค่า"
+  renderModes(0);
+  updateTemplateState();
+  renderFontChips();
+  onDraftChanged();
+});
+
+function openFontsModal() {
+  const p = sel();
+  if (!p) return;
+  if (!adminOn()) { openUnlock().then(ok => ok && openFontsModal()); return; }
+  const cur = S.status[p.id] && S.status[p.id].fileName;
+  const row = (f = { name: "", template: "" }) => `<div class="frow">
+      <input class="field" data-k="name" placeholder="ชื่อที่แสดง เช่น Tahoma หนา" value="${esc(f.name)}" maxlength="40" autocomplete="off">
+      <input class="field mono" data-k="template" placeholder="ชื่อแม่แบบในเครื่อง" value="${esc(f.template)}" autocomplete="off" spellcheck="false">
+      <button class="icon-btn sm danger" data-del type="button" title="ลบ">${icon("x")}</button></div>`;
+  modal(`<form class="modal wide" role="dialog" aria-modal="true" autocomplete="off">
+    <h3>${icon("layers")}ตั้งค่าฟอนต์ — ${esc(p.name)}</h3>
+    <div class="tips">
+      เครื่องไม่มีคำสั่งเปลี่ยนฟอนต์ (DGCP) — <b>ฟอนต์ถูกกำหนดไว้ในไฟล์แม่แบบแต่ละไฟล์ที่เครื่อง</b><br>
+      วิธีใช้: ที่เครื่องพิมพ์ สร้างแม่แบบเนื้อหาเดียวกันหลายไฟล์ ไฟล์ละฟอนต์ แล้วใส่ชื่อแม่แบบตรงนี้ (ทุกไฟล์ต้องมีชื่อตัวแปรเหมือนกัน)<br>
+      เลือกฟอนต์ในหน้าส่งข้อมูล = สลับไปแม่แบบนั้นตอนกดส่ง
+    </div>
+    <div class="frows" id="frows">${(p.fonts || []).map(row).join("")}</div>
+    <div class="fbtns">
+      <button class="btn sm" type="button" data-add>${icon("plus")}เพิ่มฟอนต์</button>
+      ${cur ? `<button class="btn sm" type="button" data-addcur title="ใส่ชื่อแม่แบบที่เครื่องกำลังใช้ ไม่ต้องพิมพ์เอง">${icon("download")}ใช้แม่แบบที่เครื่องใช้อยู่ (${esc(cur)})</button>` : ""}
+    </div>
+    <div class="err" id="fErr"></div>
+    <div class="foot"><button class="btn" type="button" data-cancel>ยกเลิก</button><button class="btn primary" type="submit"><span class="spin"></span><i class="ico">${icon("check")}</i>บันทึก</button></div>
+  </form>`, root => {
+    const form = root.querySelector("form"), box = root.querySelector("#frows");
+    const addRow = f => { box.insertAdjacentHTML("beforeend", row(f)); box.lastElementChild.querySelector("input").focus(); };
+    root.querySelector("[data-add]").onclick = () => addRow();
+    const ac = root.querySelector("[data-addcur]");
+    if (ac) ac.onclick = () => addRow({ name: cur, template: cur });
+    box.addEventListener("click", e => { const d = e.target.closest("[data-del]"); if (d) d.closest(".frow").remove(); });
+    root.querySelector("[data-cancel]").onclick = closeModal;
+    root.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+    if (!box.children.length) addRow();
+    form.onsubmit = ev => {
+      ev.preventDefault();
+      const fonts = $$(".frow", box).map(r => ({ name: r.querySelector("[data-k=name]").value, template: r.querySelector("[data-k=template]").value }));
+      busy(form.querySelector("[type=submit]"), async () => {
+        try {
+          upsertPrinter(await api("printers/fonts", { id: p.id, fonts }));
+          closeModal();
+          toast("good", "บันทึกฟอนต์แล้ว", (sel().fonts || []).length + " รายการ");
+        } catch (err) { $("#fErr").textContent = err.message; }
+      });
+    };
+  });
+}
+$("#btnFonts").onclick = openFontsModal;
+
 function loadDraftToForm() {
   const d = draft();
   if (!d) return;
@@ -1363,6 +1453,7 @@ function loadDraftToForm() {
   renderVars();
   renderTemplateChips();
   updateTemplateState();
+  renderFontChips();
   schedulePreview(0);
 }
 

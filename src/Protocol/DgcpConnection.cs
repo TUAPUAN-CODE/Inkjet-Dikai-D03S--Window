@@ -372,6 +372,44 @@ namespace Dikai.Dgcp
             return Connection.ExecuteAsync(DgcpCommands.SelectFile(Station, allocation, fileName, variables));
         }
 
+        /// <summary>
+        /// true = เครื่องนี้ไม่รับตัวแปรใน 34h (ตอบ error 6 ทั้งที่แม่แบบมีอยู่ — พบในเครื่องจริง) จึงส่งเป็น 2 ขั้นทุกครั้ง
+        /// ค่านี้ถูกจำไว้หลังเจอครั้งแรก เพื่อไม่ต้องส่งขั้นที่รู้ว่าจะพลาดซ้ำ
+        /// </summary>
+        public bool PreferTwoStepSelect { get; set; }
+
+        /// <summary>
+        /// เลือกแม่แบบพร้อมค่าตัวแปร ลอง 34h ตามเอกสารก่อน ถ้าเครื่องตอบ error 6 (เปิดไฟล์ไม่สำเร็จ) ทั้งที่มีตัวแปร
+        /// → ส่ง 34h แบบไม่มีตัวแปร (เลือกแม่แบบ) แล้วตามด้วย 35h (ใส่ค่า) ถ้าขั้นแรกก็ error 6 แปลว่าไม่มีแม่แบบนี้จริง ส่ง error ต่อ
+        /// ขั้นแรกใช้ ALLOCATION = 0 (ไม่นับจำนวนพิมพ์) แล้วให้ 35h เป็นตัวกำหนดจำนวนพิมพ์
+        /// </summary>
+        /// <returns>true ถ้าส่งเป็น 2 ขั้น</returns>
+        public async Task<bool> SelectFileWithValuesAsync(string fileName, IList<TemplateVariable> variables, ushort allocation)
+        {
+            bool hasVars = variables != null && variables.Count > 0;
+            if (hasVars && !PreferTwoStepSelect)
+            {
+                try
+                {
+                    await SelectFileAsync(fileName, variables, allocation).ConfigureAwait(false);
+                    return false;
+                }
+                catch (DgcpDeviceException ex) when (ex.Code == 6)
+                {
+                    // ตกไปลอง 2 ขั้นด้านล่าง
+                }
+            }
+            if (!hasVars)
+            {
+                await SelectFileAsync(fileName, variables, allocation).ConfigureAwait(false);
+                return false;
+            }
+            await SelectFileAsync(fileName, null, 0).ConfigureAwait(false);   // ไม่มีแม่แบบนี้จริง → error 6 โยนออกไปตรงนี้
+            PreferTwoStepSelect = true;
+            await UpdateVariablesAsync(variables, allocation, false).ConfigureAwait(false);
+            return true;
+        }
+
         /// <summary>waitPrintDone=true ใช้ 49h: เครื่องตอบ 32h ทันที และส่ง 4Ah มาเมื่อพิมพ์เสร็จ (ดู PrintDone ของ Unsolicited)</summary>
         public Task UpdateVariablesAsync(IList<TemplateVariable> variables, ushort allocation, bool waitPrintDone)
         {

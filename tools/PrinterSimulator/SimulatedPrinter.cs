@@ -33,6 +33,8 @@ namespace Dikai.Simulator
             public int MaxClients = 3;
             /// <summary>ตอบ 41h โดยชื่อไฟล์เป็น 00 ทั้งหมด (พบในเครื่องจริงบางรุ่น)</summary>
             public bool BlankFileNames;
+            /// <summary>34h ที่มีตัวแปรตอบ error 6 (พบในเครื่องจริง: 34h ไม่มีตัวแปรผ่าน, 35h/49h ผ่าน)</summary>
+            public bool RejectVarsInSelect;
             public Action<string> Log = s => { };
         }
 
@@ -237,6 +239,12 @@ namespace Dikai.Simulator
                     if (!_templates.TryGetValue(file, out var t))
                     {
                         note = "unknown file '" + file + "'";
+                        replies.Add(Error(6));
+                        break;
+                    }
+                    if (_o.RejectVarsInSelect && vars.Count > 0)
+                    {
+                        note = "34h with variables rejected (--reject-vars-in-34h)";
                         replies.Add(Error(6));
                         break;
                     }

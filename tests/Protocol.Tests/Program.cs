@@ -32,6 +32,10 @@ internal static class Program
         await RunAsync("รายงานสถานะ 3Fh ที่เครื่องส่งเอง", StatusPush);
         await RunAsync("หมดเวลา เมื่อเครื่องไม่ตอบ", Timeout);
         await RunAsync("ตรวจจับการเชื่อมต่อหลุด", ConnectionDrop);
+        await RunAsync("เลือกแม่แบบ+ค่า: เครื่องปกติใช้ 34h ขั้นเดียว", SelectOneStep);
+        await RunAsync("เลือกแม่แบบ+ค่า: เครื่องที่ 34h ไม่รับตัวแปร (error 6) → 34h แล้ว 35h", SelectTwoStep);
+        await RunAsync("เลือกแม่แบบที่ไม่มีจริง → ยัง error 6 (ไม่ถูกกลืนโดยการลองใหม่)", SelectMissingTemplate);
+        Run("ฟอนต์ (แม่แบบที่ผูกไว้): เก็บในไฟล์ตั้งค่า + ไฟล์เก่าไม่มีช่องนี้ก็อ่านได้", FontSettings);
         await RunAsync("รหัสผ่านผู้ดูแล: รหัสเริ่มต้น / ผิด / ล็อกซ้ำ", AdminUnlock);
         await RunAsync("รหัสผ่านผู้ดูแล: ล็อกเองเมื่อไม่ได้ใช้งาน + ต่อเวลาเมื่อใช้งาน", AdminIdle);
         await RunAsync("รหัสผ่านผู้ดูแล: เปลี่ยนรหัส / เก็บแบบ hash / ใช้ต่อหลังเปิดโปรแกรมใหม่", AdminChangePassword);
@@ -42,6 +46,100 @@ internal static class Program
     }
 
     // ---------------------------------------------------------------- unit
+
+    // ---------------------------------------------------------------- เลือกแม่แบบ (ฟอนต์ = แม่แบบ) + ค่าตัวแปร
+
+    private static async Task SelectOneStep()
+    {
+        using (var sim = StartSim())
+        using (var conn = await DgcpConnection.ConnectTcpAsync("127.0.0.1", sim.Port, 2000))
+        {
+            var c = new DgcpClient(conn, 1);
+            Equal(false, await c.SelectFileWithValuesAsync("LOT", Vars("lot", "B777", "date", "19/11"), 0), "ขั้นเดียว");
+            Equal("LOT", await c.GetCurrentFileAsync(), "เปลี่ยนแม่แบบแล้ว");
+            Equal("B777", sim.CurrentValue("lot"), "ค่าตัวแปร (34h ใส่ค่าทันที)");
+            Equal(false, c.PreferTwoStepSelect, "ไม่ต้องจำว่าเป็นแบบ 2 ขั้น");
+            Equal(false, await c.SelectFileWithValuesAsync("TEST", null, 0), "ไม่มีตัวแปร");
+            Equal("TEST", await c.GetCurrentFileAsync(), "แม่แบบที่สอง");
+        }
+    }
+
+    private static async Task SelectTwoStep()
+    {
+        using (var sim = StartSim(rejectVarsInSelect: true))
+        using (var conn = await DgcpConnection.ConnectTcpAsync("127.0.0.1", sim.Port, 2000))
+        {
+            var c = new DgcpClient(conn, 1);
+            // 34h พร้อมตัวแปรตรงๆ เครื่องนี้ตอบ error 6 (เหมือน log จากเครื่องจริง)
+            var ex = await ThrowsAsync<DgcpDeviceException>(() => c.SelectFileAsync("LOT", Vars("lot", "B1"), 0), "34h พร้อมตัวแปร");
+            Equal(6, ex.Code, "error 6");
+
+            Equal(true, await c.SelectFileWithValuesAsync("LOT", Vars("lot", "B777", "date", "19/11"), 0), "ส่ง 2 ขั้น");
+            Equal(true, c.PreferTwoStepSelect, "จำไว้ว่าเครื่องนี้ต้อง 2 ขั้น");
+            Equal("LOT", await c.GetCurrentFileAsync(), "เปลี่ยนแม่แบบแล้ว");
+            // 35h เป็นค่าที่เข้าคิว (ใช้ตอนพิมพ์ครั้งถัดไป) จึงสั่งพิมพ์แล้วค่อยตรวจ
+            await c.ExecuteSimpleAsync(Cmd.PrintTrigger);
+            await WaitValue(sim, "lot", "B777");
+            await WaitValue(sim, "date", "19/11");
+
+            // ครั้งต่อไปไปทาง 2 ขั้นเลย
+            Equal(true, await c.SelectFileWithValuesAsync("TEST", Vars("text1", "ABC"), 0), "ส่ง 2 ขั้นซ้ำ");
+            Equal("TEST", await c.GetCurrentFileAsync(), "แม่แบบ TEST");
+            await c.ExecuteSimpleAsync(Cmd.PrintTrigger);
+            await WaitValue(sim, "text1", "ABC");
+
+            // ชื่อตัวแปรผิด → ขั้น 35h error 2 ต้องโยนออกมา ไม่เงียบ
+            var bad = await ThrowsAsync<DgcpDeviceException>(() => c.SelectFileWithValuesAsync("LOT", Vars("nope", "x"), 0), "ชื่อตัวแปรผิด");
+            Equal(2, bad.Code, "error 2");
+        }
+    }
+
+    private static async Task WaitValue(SimulatedPrinter sim, string name, string expected)
+    {
+        for (int i = 0; i < 40; i++)
+        {
+            if (sim.CurrentValue(name) == expected) return;
+            await Task.Delay(50);
+        }
+        Equal(expected, sim.CurrentValue(name), "ค่า " + name);
+    }
+
+    private static async Task SelectMissingTemplate()
+    {
+        using (var sim = StartSim(rejectVarsInSelect: true))
+        using (var conn = await DgcpConnection.ConnectTcpAsync("127.0.0.1", sim.Port, 2000))
+        {
+            var c = new DgcpClient(conn, 1);
+            var ex = await ThrowsAsync<DgcpDeviceException>(() => c.SelectFileWithValuesAsync("NOPE", Vars("lot", "B1"), 0), "ไม่มีแม่แบบ");
+            Equal(6, ex.Code, "error 6");
+            Equal(false, c.PreferTwoStepSelect, "ไม่ควรจำว่าเป็น 2 ขั้นเพราะแม่แบบไม่มีจริง");
+            Equal("TEST", await c.GetCurrentFileAsync(), "แม่แบบเดิมไม่เปลี่ยน");
+        }
+    }
+
+    private static void FontSettings()
+    {
+        var settings = new AppSettings { Printers = new List<PrinterProfile> { PrinterProfile.CreateDefault("เครื่อง 1", "192.168.1.2") } };
+        settings.Normalize();
+        Equal(0, settings.Printers[0].Fonts.Count, "ค่าเริ่มต้นไม่มีฟอนต์");
+        settings.Printers[0].Fonts.Add(new FontEntry { Name = "Tahoma หนา", Template = "Test-B" });
+        settings.Printers[0].Fonts.Add(new FontEntry { Name = "ตัวเล็ก", Template = "Test-S" });
+        var ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(AppSettings));
+        var ms = new System.IO.MemoryStream();
+        ser.WriteObject(ms, settings);
+        ms.Position = 0;
+        var back = (AppSettings)ser.ReadObject(ms);
+        back.Normalize();
+        Equal(2, back.Printers[0].Fonts.Count, "อ่านกลับได้ 2 รายการ");
+        Equal("Test-B", back.Printers[0].Fonts[0].Template, "แม่แบบของฟอนต์แรก");
+        Equal("ตัวเล็ก", back.Printers[0].Fonts[1].Name, "ชื่อภาษาไทย");
+
+        // ไฟล์ตั้งค่าจากเวอร์ชันก่อนหน้า (ไม่มี Fonts) ต้องอ่านได้
+        var old = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes("{\"Printers\":[{\"Id\":\"a\",\"Name\":\"x\",\"Host\":\"1.2.3.4\",\"Port\":5000,\"Station\":1}],\"TimeoutMs\":3000}"));
+        var legacy = (AppSettings)ser.ReadObject(old);
+        legacy.Normalize();
+        Equal(0, legacy.Printers[0].Fonts.Count, "ไฟล์เก่า: ไม่มีฟอนต์ แต่ไม่ null");
+    }
 
     // ---------------------------------------------------------------- รหัสผ่านผู้ดูแล
 
@@ -249,7 +347,7 @@ internal static class Program
 
     // ---------------------------------------------------------------- integration
 
-    private static SimulatedPrinter StartSim(int printMs = 0, int extraFiles = 0, int page = 100, int queue = 3, int report = 0)
+    private static SimulatedPrinter StartSim(int printMs = 0, int extraFiles = 0, int page = 100, int queue = 3, int report = 0, bool rejectVarsInSelect = false)
     {
         var sim = new SimulatedPrinter(new SimulatedPrinter.Options
         {
@@ -260,6 +358,7 @@ internal static class Program
             FileListPageSize = page,
             QueueCapacity = queue,
             ReportIntervalSec = report,
+            RejectVarsInSelect = rejectVarsInSelect,
         });
         sim.Start();
         return sim;

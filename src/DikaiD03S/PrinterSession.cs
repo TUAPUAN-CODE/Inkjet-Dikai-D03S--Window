@@ -45,6 +45,8 @@ namespace Dikai.App
         public ConnState State { get; private set; } = ConnState.Disconnected;
         public string LastError { get; private set; }
         public DeviceStatus LastStatus { get; set; }
+        /// <summary>เครื่องนี้ไม่รับตัวแปรใน 34h (เรียนรู้จากการส่งครั้งแรกที่ error 6) — ดู DgcpClient.PreferTwoStepSelect</summary>
+        public bool TwoStepSelect { get; set; }
         public int TimeoutMs { get; set; } = 3000;
 
         /// <summary>&gt; 0 ระหว่างอ่านสถานะอัตโนมัติ — แพ็กเก็ต 3Ah ช่วงนั้นถูกซ่อนจาก log (ที่ผู้ใช้กดเองยังแสดง)</summary>

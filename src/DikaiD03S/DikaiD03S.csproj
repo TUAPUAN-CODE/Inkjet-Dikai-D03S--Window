@@ -11,7 +11,7 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>Dikai.App</RootNamespace>
     <AssemblyName>DikaiD03S</AssemblyName>
-    <Version>1.2.1</Version>
+    <Version>1.3.0</Version>
     <Product>Dikai D03S Sender</Product>
     <AssemblyTitle>Dikai D03S — ส่งข้อมูลเครื่องพิมพ์ (DGCP v2.0)</AssemblyTitle>
     <ApplicationIcon>app.ico</ApplicationIcon>

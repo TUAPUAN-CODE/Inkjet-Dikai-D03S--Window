@@ -22,6 +22,17 @@ namespace Dikai.App
         [DataMember(Order = 2)] public string Value { get; set; }
     }
 
+    /// <summary>
+    /// "ฟอนต์" ที่ให้เลือกในหน้าส่งข้อมูล = แม่แบบที่ผู้ดูแลสร้างไว้ในเครื่องแล้ว (ฟอนต์ถูกกำหนดในไฟล์แม่แบบ ไม่มีคำสั่งเปลี่ยนฟอนต์ใน DGCP)
+    /// เลือกฟอนต์ = สลับไปแม่แบบนั้นด้วย 34h
+    /// </summary>
+    [DataContract]
+    public sealed class FontEntry
+    {
+        [DataMember(Order = 1)] public string Name { get; set; }
+        [DataMember(Order = 2)] public string Template { get; set; }
+    }
+
     [DataContract]
     public sealed class PrinterProfile
     {
@@ -40,6 +51,7 @@ namespace Dikai.App
         [DataMember(Order = 12)] public int Mode { get; set; }
         [DataMember(Order = 13)] public bool ClearBeforeSend { get; set; }
         [DataMember(Order = 14)] public List<string> KnownTemplates { get; set; }
+        [DataMember(Order = 15)] public List<FontEntry> Fonts { get; set; }
 
         public bool IsSerial => string.Equals(Kind, "serial", StringComparison.OrdinalIgnoreCase);
 
@@ -66,6 +78,7 @@ namespace Dikai.App
             if (Station < 0 || Station > 255) Station = 1;
             if (Variables == null) Variables = new List<VariableEntry>();
             if (KnownTemplates == null) KnownTemplates = new List<string>();
+            if (Fonts == null) Fonts = new List<FontEntry>();
             if (Allocation < 0 || Allocation > 65535) Allocation = 0;
             if (Mode < 0 || Mode > 2) Mode = 0;
         }

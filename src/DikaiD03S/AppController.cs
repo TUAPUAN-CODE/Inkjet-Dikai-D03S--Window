@@ -71,6 +71,7 @@ namespace Dikai.App
                 case "time/set":
                 case "params":
                 case "raw":
+                case "printers/fonts":
                     return true;
                 case "files":
                     return b.Bool("usb");
@@ -128,6 +129,7 @@ namespace Dikai.App
                 case "printers/save": return SavePrinter(b);
                 case "printers/delete": return DeletePrinter(b);
                 case "printers/draft": return SaveDraft(b);
+                case "printers/fonts": return SaveFonts(b);
                 case "printers/connect":
                 {
                     var s = Find(b);
@@ -282,6 +284,7 @@ namespace Dikai.App
                         { "knownTemplates", p.KnownTemplates },
                     }
                 },
+                { "fonts", (p.Fonts ?? new List<FontEntry>()).Select(f => new Dictionary<string, object> { { "name", f.Name }, { "template", f.Template } }).ToList() },
             };
         }
 
@@ -373,6 +376,34 @@ namespace Dikai.App
             Save();
             Server?.Broadcast("printerRemoved", new Dictionary<string, object> { { "id", s.Profile.Id } });
             return true;
+        }
+
+        /// <summary>ตั้งรายการ "ฟอนต์" (ชื่อที่แสดง → ชื่อแม่แบบในเครื่อง) ของเครื่องนี้ — เฉพาะผู้ดูแล</summary>
+        private object SaveFonts(JObj b)
+        {
+            var s = Find(b);
+            var list = new List<FontEntry>();
+            foreach (var f in b.Objects("fonts"))
+            {
+                var name = (f.Str("name") ?? "").Trim();
+                var template = (f.Str("template") ?? "").Trim();
+                if (name.Length == 0 && template.Length == 0) continue;
+                if (name.Length == 0) throw new ArgumentException("ฟอนต์ \"" + template + "\" ยังไม่มีชื่อที่แสดง");
+                if (template.Length == 0) throw new ArgumentException("ฟอนต์ \"" + name + "\" ยังไม่ได้ใส่ชื่อแม่แบบในเครื่อง");
+                if (name.Length > 40) throw new ArgumentException("ชื่อที่แสดงยาวเกิน 40 ตัวอักษร: " + name);
+                if (System.Text.Encoding.UTF8.GetByteCount(template) > 255) throw new ArgumentException("ชื่อแม่แบบยาวเกิน 255 ไบต์: " + template);
+                if (list.Any(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))) throw new ArgumentException("ชื่อที่แสดง \"" + name + "\" ซ้ำกัน");
+                if (list.Any(x => string.Equals(x.Template, template, StringComparison.OrdinalIgnoreCase)))
+                    throw new ArgumentException("แม่แบบ \"" + template + "\" ถูกใช้กับสองฟอนต์ — ให้ชื่อแม่แบบไม่ซ้ำกัน");
+                list.Add(new FontEntry { Name = name, Template = template });
+            }
+            if (list.Count > 20) throw new ArgumentException("ตั้งฟอนต์ได้ไม่เกิน 20 รายการ");
+            lock (_gate) s.Profile.Fonts = list;
+            Save();
+            AddLog(new LogEntry { Printer = s.Profile.Name, Kind = LogKind.Info, Text = "ตั้งรายการฟอนต์ " + list.Count + " รายการ" }, s);
+            var dto = PrinterDto(s);
+            Server?.Broadcast("printer", dto);
+            return dto;
         }
 
         private object SaveDraft(JObj b)
@@ -472,8 +503,15 @@ namespace Dikai.App
                         await c.UpdateVariablesAsync(vars, alloc, true).ConfigureAwait(false);
                         break;
                     default:
-                        await c.SelectFileAsync(template, vars, alloc).ConfigureAwait(false);
+                    {
+                        // 34h ปกติ; ถ้าเครื่องไม่รับตัวแปรใน 34h (error 6) จะส่งเป็น 2 ขั้น: 34h เลือกแม่แบบ แล้ว 35h ใส่ค่า
+                        c.PreferTwoStepSelect = s.TwoStepSelect;
+                        bool twoStep = await c.SelectFileWithValuesAsync(template, vars, alloc).ConfigureAwait(false);
+                        if (twoStep && !s.TwoStepSelect)
+                            s.Write(LogKind.Info, "เครื่องนี้ไม่รับตัวแปรใน 34h — ส่งเป็น 2 ขั้น (34h เลือกแม่แบบ แล้ว 35h ใส่ค่า) และจะส่งแบบนี้ต่อไป");
+                        s.TwoStepSelect = c.PreferTwoStepSelect;
                         break;
+                    }
                 }
             }
             catch (DgcpDeviceException ex)
@@ -514,7 +552,7 @@ namespace Dikai.App
                 case 11:
                 case 12:
                     return mode == SendMode.SelectFile
-                        ? "ไม่พบแม่แบบชื่อ \"" + template + "\" ในเครื่อง (error " + ex.Code + ") — ใช้ชื่อตามที่เห็นในรายการไฟล์บนหน้าจอเครื่อง หรือกด \"ดึงจากเครื่อง\" เพื่ออ่านชื่อแม่แบบที่ใช้อยู่"
+                        ? "ไม่พบแม่แบบชื่อ \"" + template + "\" ในเครื่อง (error " + ex.Code + ") — ตรวจชื่อให้ตรงกับที่เห็นในรายการไฟล์บนหน้าจอเครื่อง (ตัวพิมพ์ใหญ่-เล็กด้วย) หรือกด \"ดึงจากเครื่อง\" เพื่ออ่านชื่อแม่แบบที่ใช้อยู่"
                         : ex.Message;
                 case 2:
                     return "เครื่องไม่รับข้อมูล (error 2) — ส่วนใหญ่เกิดจากชื่อตัวแปรไม่ตรงกับในแม่แบบ (ตัวพิมพ์เล็ก-ใหญ่ต้องตรง) หรือแม่แบบไม่มีช่องที่เป็นตัวแปร กด \"ดึงจากเครื่อง\" เพื่อดูชื่อที่ถูกต้อง";

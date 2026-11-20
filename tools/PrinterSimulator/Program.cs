@@ -29,6 +29,7 @@ namespace Dikai.Simulator
                         case "--page": o.FileListPageSize = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                         case "--report": o.ReportIntervalSec = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                         case "--blank-names": o.BlankFileNames = true; break;
+                        case "--reject-vars-in-34h": o.RejectVarsInSelect = true; break;
                         case "-h":
                         case "--help":
                         case "/?":
@@ -85,6 +86,7 @@ namespace Dikai.Simulator
             Console.WriteLine("  --page 100        file names per 41h packet");
             Console.WriteLine("  --report 0        push 3Fh status every N seconds (0 = off)");
             Console.WriteLine("  --blank-names     answer 41h with empty (00) file names, like some real units");
+            Console.WriteLine("  --reject-vars-in-34h  answer error 6 when 34h carries variables, like some real units");
         }
     }
 }
